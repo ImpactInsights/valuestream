@@ -13,10 +13,12 @@ start-stack:
 	cd test/jaeger-stack && docker-compose down && docker-compose up
 
 test-service-github-jenkins:
+	GO111MODULE=on \
 	VALUESTREAM_URL=http://localhost:5000 \
 		go test -run TestGithubJenkinsTrace ./traces/trace_service_test.go -v -count=1
 
 test-service-github-ci-build-jenkins:
+	GO111MODULE=on \
 	VALUESTREAM_URL=http://localhost:5000 \
 		go test -run TestGithubJenkinsPRBuildJenkinsDeployTrace ./traces/trace_service_test.go -v -count=1
 
