@@ -1,0 +1,93 @@
+---
+version: '2'
+services:
+  els:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.0.0
+    restart: always
+    container_name: els
+    hostname: els
+    networks:
+    - elastic-jaeger
+    environment:
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    mem_limit: 1g
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+      - eslog:/usr/share/elasticsearch/logs
+      - ./config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.0.0
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://els:9200
+    depends_on:
+    - els
+    networks:
+    - elastic-jaeger
+
+  jaeger-collector:
+    image: jaegertracing/jaeger-collector:latest
+    ports:
+      - "14267:14267"
+      - "14268:14268"
+      - "9411:9411"
+    depends_on:
+    - els
+    container_name: jaeger-collector
+    hostname: jaeger-collector
+    restart: unless-stopped
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://els:9200
+    networks:
+    - elastic-jaeger
+    command: ["--es.tags-as-fields.all=true"]
+
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:latest
+    ports:
+      - "5775:5775/udp"
+      - "5778:5778"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+    depends_on:
+    - els
+    - jaeger-collector
+    restart: unless-stopped
+    container_name: jaeger-agent
+    hostname: jaeger-agent
+    networks:
+    - elastic-jaeger
+    command: ["--collector.host-port=jaeger-collector:14267"]
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:latest
+    ports:
+      - 16686:16686
+    depends_on:
+      - els
+      - jaeger-collector
+    restart: unless-stopped
+    container_name: jaeger-query
+    hostname: jaeger-query
+    networks:
+    - elastic-jaeger
+    command: ["--span-storage.type=elasticsearch", "--es.server-urls=http://els:9200", "--es.sniffer=false", "--log-level=debug"]
+
+volumes:
+  esdata1:
+    driver: local
+  eslog:
+    driver: local
+networks:
+  elastic-jaeger:
+    driver: bridge
