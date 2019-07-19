@@ -52,7 +52,7 @@ Valuestream is able to provide a cross system view into software development.  T
 In order to get the full value from ValueStream metrics need to be [connected in some way](https://opentracing.io/specification/#the-opentracing-data-model).  "Trace Propagation" is ValueStreams term for connencting these.  The supported relationships are visualized as:
 
 <p align="center">
-  <img width="500px" src="docs/static/span_relationships.png">
+  <img width="300px" src="docs/static/span_relationships.png">
 </p>
 
 The following table shows the currently supported actions, which service they originate from, and how they are identified within traces. The chart below shows each action and how it's referenced by child actions.  The first is a github issue.  It can be referenced by a Pull Request or a build using the `TRACE_ID` of the form `vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}`.  
@@ -64,7 +64,7 @@ The following table shows the currently supported actions, which service they or
 |   Jenkins    | Pull Request      | N/A | N/A  | `Spans.{{ PULL_REQUEST_ID }}` |
 
 
-The next chart shows how children nodes are able to reference their parent nodes.  The children node relationships are (PullRequest -> Issue), (Build -> PullRequest), and (Build, Issue).  Listed below shows each pair is able to reference the other in order to form full traces:
+The next chart shows how children nodes are able to reference their parent nodes.  The children node relationships are (PullRequest -> Issue), (Build -> PullRequest), and (Deploy -> Issue).  Listed below shows each pair is able to reference the other in order to form full traces:
 
 ## Referencing Nodes
 
@@ -74,7 +74,7 @@ This can be used to track all code associated with a given ticket/issue.
 Produces:
 
 <p align="center">
-  <img width="900" src="https://user-images.githubusercontent.com/321963/61335859-02f9ca80-a7fd-11e9-9b58-bed7266a2f14.png">
+  <img width="700" src="https://user-images.githubusercontent.com/321963/61335859-02f9ca80-a7fd-11e9-9b58-bed7266a2f14.png">
 </p>
 
 The pull request branch needs to include the Issue `TRACE_ID` somewhere:
@@ -83,7 +83,7 @@ The pull request branch needs to include the Issue `TRACE_ID` somewhere:
 $ git checkout -b feature/vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}/my-issue
 ```
 <p align="center">
-  <img width="900" alt="Screen Shot 2019-07-11 at 4 50 36 PM" src="https://user-images.githubusercontent.com/321963/61084593-4b2f7c00-a3fc-11e9-8570-a5e9e2ee6ef2.png">
+  <img width="700" alt="Screen Shot 2019-07-11 at 4 50 36 PM" src="https://user-images.githubusercontent.com/321963/61084593-4b2f7c00-a3fc-11e9-8570-a5e9e2ee6ef2.png">
 </p>
 
 To reference the issue above from a pull request the branch name must include:
@@ -96,36 +96,16 @@ vstrace-github-valuestream-27
 This relationship helps to capture all CI builds associated with a given pull request. The 
 
 <p align="center">
-  <img width="900px" src="docs/static/lightstep_pr_build_1.png">
+  <img width="700px" src="docs/static/lightstep_pr_build_1.png">
 </p>
 
 
-## Build -> Issue
+## Deploy -> Issue
 
-
-
-
-
-
-
-
-#### Pull Request
-
-##### Branch Name
-Branch names can reference a `TRACE_ID`
-
-<img width="600" alt="Screen Shot 2019-07-11 at 4 57 15 PM" src="https://user-images.githubusercontent.com/321963/61084932-12dc6d80-a3fd-11e9-8af8-fb2d9fb184b9.png">
-
-### Jenkins
-
-#### Build
-
-##### Parameter
-Build Parameters can reference any Parent Span of type `ISSUE` by it's public `TRACE_ID`.
+This tracks deploys related to a specific issue.  This relationship is established through jenkins build parameters.  The `TRACE_ID`of the issue needs to be present in the jenkins build params:
 
 <img width="1377" alt="Screen Shot 2019-07-11 at 7 09 39 PM" src="https://user-images.githubusercontent.com/321963/61091311-b0d93380-a40f-11e9-82b8-bc1123165d71.png">
 
-##### SCM Integration
 
-SCM triggered builds (ie github webhooks) can reference a Pull Request as parent through its branch name.
+
 
