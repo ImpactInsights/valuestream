@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/uber/jaeger-client-go"
-	"github.com/uber/jaeger-client-go/config"
+	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"io"
 	"net/http"
 	"os"
@@ -81,16 +81,12 @@ func init() {
 
 // initJaeger returns an instance of Jaeger Tracer that samples 100% of traces and logs all spans to stdout.
 func initJaeger(service string) (opentracing.Tracer, io.Closer) {
-	cfg := &config.Configuration{
-		Sampler: &config.SamplerConfig{
-			Type:  "const",
-			Param: 1,
-		},
-		Reporter: &config.ReporterConfig{
-			LogSpans: true,
-		},
+	cfg, err := jaegercfg.FromEnv()
+	if err != nil {
+		panic(err)
 	}
-	tracer, closer, err := cfg.New(service, config.Logger(jaeger.StdLogger))
+
+	tracer, closer, err := cfg.New(service, jaegercfg.Logger(jaeger.StdLogger))
 	if err != nil {
 		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
 	}
