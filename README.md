@@ -43,9 +43,8 @@ Traces support drilling down into individual units or stages of work in order to
 
 # Quickstart (Sending Github Issue Data in 1 Minute!)
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/c7gD7WGqFxY" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+ValueStream can be started and submitting software metrics in minutes. [VIDEO QUICKSTART HERE](https://youtu.be/c7gD7WGqFxY) (video requires `docker-compose up -d`)
 
-ValueStream can be started and submitting software metrics in minutes.
 - Start ValueStream Docker Stack
 ```
 $ docker-compose up -d
