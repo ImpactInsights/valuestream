@@ -62,9 +62,7 @@ valuestream_1       | {"buffer_percentage":0,"buffer_size":500,"curr_size":0,"le
 - Setup `ngrok` to access your local env 
 ```
 $ ~/ngrok http 5000
-
 ```
-<<<INSERT IMAGE HERE>>>
 - Point your github [webhook](https://developer.github.com/webhooks/) at `ngrok`
 
 - Start tracking issues and pull requests!
@@ -77,6 +75,9 @@ $ ~/ngrok http 5000
 ## Roadmap
 - Jira Webhook Integration is the next focus
 - Persistent span storage using Redis
+- Minimal Docker Image
+- CI 
+- Service Tests CI
 
 # Integration
 ## Github
