@@ -138,7 +138,12 @@ This relationship helps to capture all CI builds associated with a given pull re
 
 ## Deploy -> Issue
 
-This tracks deploys related to a specific issue.  This relationship is established through jenkins build parameters.  The `TRACE_ID`of the issue needs to be present in the jenkins build params:
+This tracks deploys related to a specific issue.
+
+<p align="center">
+  <img width="700px" src="https://user-images.githubusercontent.com/53025024/61565413-f7014900-aa46-11e9-99d6-d42907c8fd54.png">
+</p>
+This relationship is established through jenkins build parameters.  The `TRACE_ID`of the issue needs to be present in the jenkins build params:
 
 <img width="700" alt="Screen Shot 2019-07-11 at 7 09 39 PM" src="https://user-images.githubusercontent.com/321963/61091311-b0d93380-a40f-11e9-82b8-bc1123165d71.png">
 
