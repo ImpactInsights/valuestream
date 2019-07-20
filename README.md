@@ -80,6 +80,8 @@ $ ~/ngrok http 5000
 - Minimal Docker Image
 - CI 
 - Service Tests CI
+- Historical Data Import 
+- Gitlab Integration
 
 # Integration
 ## Github
