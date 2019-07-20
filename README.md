@@ -33,7 +33,9 @@ Valuestream is able to provide a cross system view into software development.  T
 
 The real power of value stream comes from being able to tie together all the Delivery events (Issue, PRs, Builds & Deploys) from different sources.  When events are connected it is called a "Trace".  The image below shows the example of all steps required in order to produce a valuestream feature:
 
-<< INSERT FULL LIGHTSTEP TRACE IMAGE>>
+<p align="center">
+  <img width="1448" alt="Screen Shot 2019-07-14 at 5 34 52 PM" src="https://user-images.githubusercontent.com/53025024/61565404-ed77e100-aa46-11e9-89f7-56ba7ba694ad.png">
+</p>
 
 To generate traces ValueStream leverages the OpenTracing ecosystem.  This defines a structured conventions to connecting data from multiple systems and provides mature client libraries and a rich infrastructure ecosystem.  In order to use get the most out of ValueStream it must be pointed at an opentracing stack.  [Jaeger](https://github.com/jaegertracing/jaeger) (by uber) is the most popular open source stack and has 8500+ stars on github.  Local development of ValueStream is done using jaeger. Any other opentracing compliant stack can be used (Datadog, Lightstep, etc).  ValueStream uses [LightStep](https://lightstep.com/) in production for development of ValueStream. 
 
