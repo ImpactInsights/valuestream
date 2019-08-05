@@ -1,7 +1,7 @@
 PKGS = $(shell go list ./... | grep -v /vendor/)
 
 test-unit:
-	GO111MODULE=on go test -tags=unit $(PKGS)
+	GO111MODULE=on go test -tags=unit -coverprofile=coverage.out $(PKGS)
 
 build:
 	GO111MODULE=on go build ./...
