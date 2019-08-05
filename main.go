@@ -142,13 +142,13 @@ func main() {
 		jenkinsTracer = tracer.LoggingTracer{}
 	}
 
-	ts, err := traces.NewBufferedSpanCache(1000)
+	ts, err := traces.NewBufferedSpanStore(1000)
 	if err != nil {
 		panic(err)
 	}
 	go ts.Monitor(ctx, time.Second*60, "traces")
 
-	jenkinsSpans, err := traces.NewBufferedSpanCache(500)
+	jenkinsSpans, err := traces.NewBufferedSpanStore(500)
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +162,7 @@ func main() {
 		),
 	)
 
-	githubSpans, err := traces.NewBufferedSpanCache(500)
+	githubSpans, err := traces.NewBufferedSpanStore(500)
 	if err != nil {
 		panic(err)
 	}

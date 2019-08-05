@@ -1,6 +1,7 @@
 package jenkins
 
 import (
+	"context"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
@@ -10,14 +11,14 @@ import (
 // https://github.com/jenkinsci/statistics-gatherer-plugin
 
 type EventTracer struct {
-	spans traces.SpanCache
+	spans traces.SpanStore
 
 	Tracer opentracing.Tracer
-	traces traces.SpanCache
+	traces traces.SpanStore
 }
 
 func (et *EventTracer) handleBuild(be *BuildEvent) error {
-
+	ctx := context.Background()
 	switch be.State() {
 	case startState:
 		parentID, found := be.ParentSpanID()
@@ -32,7 +33,7 @@ func (et *EventTracer) handleBuild(be *BuildEvent) error {
 		opts := make([]opentracing.StartSpanOption, 0)
 
 		if found {
-			parentSpan, hasParent := et.traces.Get(parentID)
+			parentSpan, hasParent := et.traces.Get(ctx, parentID)
 			if hasParent {
 				opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
 			}
@@ -45,10 +46,10 @@ func (et *EventTracer) handleBuild(be *BuildEvent) error {
 		for k, v := range be.Tags() {
 			span.SetTag(k, v)
 		}
-		et.spans.Set(be.ID(), span)
+		et.spans.Set(ctx, be.ID(), span)
 
 	case endState:
-		span, ok := et.spans.Get(be.ID())
+		span, ok := et.spans.Get(ctx, be.ID())
 		if !ok {
 			log.WithFields(log.Fields{
 				"service": "jenkins",
@@ -63,13 +64,13 @@ func (et *EventTracer) handleBuild(be *BuildEvent) error {
 		isErr := be.Result != "SUCCESS"
 		span.SetTag("error", isErr)
 		span.Finish()
-		et.spans.Delete(be.ID())
+		et.spans.Delete(ctx, be.ID())
 	}
 
 	return nil
 }
 
-func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanCache, spans traces.SpanCache) *EventTracer {
+func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanStore, spans traces.SpanStore) *EventTracer {
 	return &EventTracer{
 		Tracer: tracer,
 		spans:  spans,

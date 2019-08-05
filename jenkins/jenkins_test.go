@@ -2,6 +2,7 @@ package jenkins
 
 import (
 	"bytes"
+	"context"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
@@ -25,8 +26,8 @@ func TestEventTracer_HTTPBuildHandler_StartTrace(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 
@@ -53,12 +54,16 @@ func TestEventTracer_HTTPBuildHandler_EndTrace(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 
-	et.spans.Set("aUrl", tracer.StartSpan("build"))
+	et.spans.Set(
+		context.Background(),
+		"aUrl",
+		tracer.StartSpan("build"),
+	)
 
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(webhook.HTTPBuildHandler)
@@ -83,8 +88,8 @@ func TestEventTracer_HTTPBuildHandler_MissingStartEvent(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 

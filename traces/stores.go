@@ -42,10 +42,10 @@ const (
 	IntermediaryState
 )
 
-type SpanCache interface {
-	Get(id string) (opentracing.Span, bool)
-	Set(id string, span opentracing.Span)
-	Delete(id string) bool
+type SpanStore interface {
+	Get(ctx context.Context, id string) (opentracing.Span, bool)
+	Set(ctx context.Context, id string, span opentracing.Span)
+	Delete(ctx context.Context, id string) bool
 	Count() int
 }
 
@@ -54,20 +54,20 @@ type Spans struct {
 	mu    *sync.Mutex
 }
 
-func (s *Spans) Get(id string) (opentracing.Span, bool) {
+func (s *Spans) Get(ctx context.Context, id string) (opentracing.Span, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	span, ok := s.spans[id]
 	return span, ok
 }
 
-func (s *Spans) Set(id string, span opentracing.Span) {
+func (s *Spans) Set(ctx context.Context, id string, span opentracing.Span) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.spans[id] = span
 }
 
-func (s *Spans) Delete(id string) bool {
+func (s *Spans) Delete(ctx context.Context, id string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.spans, id)
@@ -80,7 +80,7 @@ func (s *Spans) Count() int {
 	return len(s.spans)
 }
 
-func NewMemoryUnboundedSpanCache() *Spans {
+func NewMemoryUnboundedSpanStore() *Spans {
 	return &Spans{
 		spans: make(map[string]opentracing.Span),
 		mu:    &sync.Mutex{},
@@ -102,7 +102,7 @@ type idSpan struct {
 // Set calculates the index of the buffer to use and
 // then sets the span in the buffer and updates the map
 // to associate the id with the index
-func (s *BufferedSpans) Set(id string, span opentracing.Span) {
+func (s *BufferedSpans) Set(ctx context.Context, id string, span opentracing.Span) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -122,7 +122,7 @@ func (s *BufferedSpans) Set(id string, span opentracing.Span) {
 }
 
 // TODO delete may be missing now that we have a circular buffer
-func (s *BufferedSpans) Delete(id string) bool {
+func (s *BufferedSpans) Delete(ctx context.Context, id string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -135,7 +135,7 @@ func (s *BufferedSpans) Delete(id string) bool {
 	return true
 }
 
-func (s *BufferedSpans) Get(id string) (opentracing.Span, bool) {
+func (s *BufferedSpans) Get(ctx context.Context, id string) (opentracing.Span, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	i, ok := s.spans[id]
@@ -178,7 +178,7 @@ func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, nam
 	}
 }
 
-func NewBufferedSpanCache(numBufferedSpans int) (*BufferedSpans, error) {
+func NewBufferedSpanStore(numBufferedSpans int) (*BufferedSpans, error) {
 	if numBufferedSpans <= 0 {
 		return nil, fmt.Errorf("buffer size must be > 0, recieved: %d", numBufferedSpans)
 	}
