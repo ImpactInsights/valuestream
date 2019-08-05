@@ -2,6 +2,7 @@ package github
 
 import (
 	"bytes"
+	"context"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	"github.com/opentracing/opentracing-go/mocktracer"
@@ -31,8 +32,8 @@ func TestEventTracer_WebhookHandler_IssueOpen(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(github, nil)
 
@@ -64,10 +65,11 @@ func TestEventTracer_WebhookHandler_IssueClose(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	github.traces.Set(
+		context.Background(),
 		traces.PrefixISSUE("vstrace-github-valuestream-1"),
 		tracer.StartSpan("issue"),
 	)
@@ -85,8 +87,8 @@ func TestEventTracer_handleIssue_EndStateNoStartFound(t *testing.T) {
 	tracer := mocktracer.New()
 	gh := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	closed := "closed"
 	name := "name"
@@ -124,8 +126,8 @@ func TestEventTracer_WebhookHandler_PullRequestOpen(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(github, nil)
 
@@ -157,10 +159,14 @@ func TestEventTracer_WebhookHandler_PullRequestClose(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
-	github.spans.Set("1", tracer.StartSpan("pull_request"))
+	github.spans.Set(
+		context.Background(),
+		"1",
+		tracer.StartSpan("pull_request"),
+	)
 	webhook := NewWebhook(github, nil)
 
 	rr := httptest.NewRecorder()
@@ -172,14 +178,16 @@ func TestEventTracer_WebhookHandler_PullRequestClose(t *testing.T) {
 }
 
 func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
+	ctx := context.Background()
 	tracer := mocktracer.New()
 	gh := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	rootSpan := tracer.StartSpan("issue")
 	gh.traces.Set(
+		ctx,
 		traces.PrefixISSUE("vstrace-github-valuestream-1"),
 		rootSpan,
 	)
@@ -198,7 +206,7 @@ func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, gh.spans.Count())
-	span, ok := gh.spans.Get("1")
+	span, ok := gh.spans.Get(ctx, "1")
 	assert.True(t, ok)
 	s := span.(*mocktracer.MockSpan)
 	assert.Equal(t, "pull_request", s.OperationName)
