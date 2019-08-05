@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"fmt"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
@@ -15,6 +16,7 @@ type EventTracer struct {
 }
 
 func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
+	ctx := context.Background()
 	ie := IssuesEvent{issue}
 
 	log.WithFields(log.Fields{
@@ -32,7 +34,7 @@ func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
 		}
 
 		if tID, found := ie.TraceID(); found {
-			et.traces.Set(tID, span)
+			et.traces.Set(ctx, tID, span)
 		}
 
 	case traces.EndState:
@@ -47,7 +49,7 @@ func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
 			}
 		}
 
-		span, ok := et.traces.Get(tID)
+		span, ok := et.traces.Get(ctx, tID)
 		if !ok {
 			return traces.SpanMissingError{
 				Err: fmt.Errorf("span not found for github span: %q", tID),
@@ -55,13 +57,14 @@ func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
 		}
 		span.Finish()
 		// TODO add error/state result
-		et.traces.Delete(tID)
+		et.traces.Delete(ctx, tID)
 	}
 
 	return nil
 }
 
 func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
+	ctx := context.Background()
 	pre := PREvent{pr}
 
 	log.WithFields(log.Fields{
@@ -75,7 +78,7 @@ func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
 		opts := make([]opentracing.StartSpanOption, 0)
 
 		if found {
-			parentSpan, hasParent := et.traces.Get(parentID)
+			parentSpan, hasParent := et.traces.Get(ctx, parentID)
 			if hasParent {
 				opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
 			}
@@ -88,10 +91,10 @@ func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
 		for k, v := range pre.Tags() {
 			span.SetTag(k, v)
 		}
-		et.spans.Set(pre.ID(), span)
+		et.spans.Set(ctx, pre.ID(), span)
 		if ref := pre.BranchRef(); ref != nil {
 			// TODO This will need to be namespaced for next repo
-			et.traces.Set(*ref, span)
+			et.traces.Set(ctx, *ref, span)
 		} else {
 			log.Warnf("no branch")
 		}
@@ -99,7 +102,7 @@ func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
 
 	case traces.EndState:
 		sID := pre.ID()
-		span, ok := et.spans.Get(sID)
+		span, ok := et.spans.Get(ctx, sID)
 		if !ok {
 			return traces.SpanMissingError{
 				Err: fmt.Errorf("span not found for github span: %q", sID),
@@ -108,9 +111,9 @@ func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
 		span.Finish()
 		// TODO add error/state result
 
-		et.spans.Delete(pre.ID())
+		et.spans.Delete(ctx, pre.ID())
 		if ref := pre.BranchRef(); ref != nil {
-			et.traces.Delete(*ref)
+			et.traces.Delete(ctx, *ref)
 		}
 	}
 	// check for start/end
