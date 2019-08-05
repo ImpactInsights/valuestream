@@ -10,8 +10,8 @@ import (
 
 type EventTracer struct {
 	Tracer opentracing.Tracer
-	spans  traces.SpanCache
-	traces traces.SpanCache
+	spans  traces.SpanStore
+	traces traces.SpanStore
 }
 
 func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
@@ -131,7 +131,7 @@ func (et *EventTracer) handleEvent(event interface{}) error {
 	return err
 }
 
-func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanCache, spans traces.SpanCache) *EventTracer {
+func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanStore, spans traces.SpanStore) *EventTracer {
 	return &EventTracer{
 		Tracer: tracer,
 		spans:  spans,

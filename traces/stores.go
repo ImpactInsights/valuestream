@@ -42,7 +42,7 @@ const (
 	IntermediaryState
 )
 
-type SpanCache interface {
+type SpanStore interface {
 	Get(id string) (opentracing.Span, bool)
 	Set(id string, span opentracing.Span)
 	Delete(id string) bool
@@ -80,7 +80,7 @@ func (s *Spans) Count() int {
 	return len(s.spans)
 }
 
-func NewMemoryUnboundedSpanCache() *Spans {
+func NewMemoryUnboundedSpanStore() *Spans {
 	return &Spans{
 		spans: make(map[string]opentracing.Span),
 		mu:    &sync.Mutex{},
@@ -178,7 +178,7 @@ func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, nam
 	}
 }
 
-func NewBufferedSpanCache(numBufferedSpans int) (*BufferedSpans, error) {
+func NewBufferedSpanStore(numBufferedSpans int) (*BufferedSpans, error) {
 	if numBufferedSpans <= 0 {
 		return nil, fmt.Errorf("buffer size must be > 0, recieved: %d", numBufferedSpans)
 	}

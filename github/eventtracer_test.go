@@ -31,8 +31,8 @@ func TestEventTracer_WebhookHandler_IssueOpen(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(github, nil)
 
@@ -64,8 +64,8 @@ func TestEventTracer_WebhookHandler_IssueClose(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	github.traces.Set(
 		traces.PrefixISSUE("vstrace-github-valuestream-1"),
@@ -85,8 +85,8 @@ func TestEventTracer_handleIssue_EndStateNoStartFound(t *testing.T) {
 	tracer := mocktracer.New()
 	gh := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	closed := "closed"
 	name := "name"
@@ -124,8 +124,8 @@ func TestEventTracer_WebhookHandler_PullRequestOpen(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(github, nil)
 
@@ -157,8 +157,8 @@ func TestEventTracer_WebhookHandler_PullRequestClose(t *testing.T) {
 	tracer := mocktracer.New()
 	github := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	github.spans.Set("1", tracer.StartSpan("pull_request"))
 	webhook := NewWebhook(github, nil)
@@ -175,8 +175,8 @@ func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
 	tracer := mocktracer.New()
 	gh := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	rootSpan := tracer.StartSpan("issue")
 	gh.traces.Set(

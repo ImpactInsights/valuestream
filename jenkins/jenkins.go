@@ -10,10 +10,10 @@ import (
 // https://github.com/jenkinsci/statistics-gatherer-plugin
 
 type EventTracer struct {
-	spans traces.SpanCache
+	spans traces.SpanStore
 
 	Tracer opentracing.Tracer
-	traces traces.SpanCache
+	traces traces.SpanStore
 }
 
 func (et *EventTracer) handleBuild(be *BuildEvent) error {
@@ -69,7 +69,7 @@ func (et *EventTracer) handleBuild(be *BuildEvent) error {
 	return nil
 }
 
-func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanCache, spans traces.SpanCache) *EventTracer {
+func NewEventTracer(tracer opentracing.Tracer, ts traces.SpanStore, spans traces.SpanStore) *EventTracer {
 	return &EventTracer{
 		Tracer: tracer,
 		spans:  spans,

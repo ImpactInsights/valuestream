@@ -25,8 +25,8 @@ func TestEventTracer_HTTPBuildHandler_StartTrace(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 
@@ -53,8 +53,8 @@ func TestEventTracer_HTTPBuildHandler_EndTrace(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 
@@ -83,8 +83,8 @@ func TestEventTracer_HTTPBuildHandler_MissingStartEvent(t *testing.T) {
 	tracer := mocktracer.New()
 	et := NewEventTracer(
 		tracer,
-		traces.NewMemoryUnboundedSpanCache(),
-		traces.NewMemoryUnboundedSpanCache(),
+		traces.NewMemoryUnboundedSpanStore(),
+		traces.NewMemoryUnboundedSpanStore(),
 	)
 	webhook := NewWebhook(et)
 

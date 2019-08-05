@@ -7,7 +7,7 @@ import (
 )
 
 func TestBufferedSpans_Set_OverBuffer_Bounded(t *testing.T) {
-	spans, err := NewBufferedSpanCache(1)
+	spans, err := NewBufferedSpanStore(1)
 	assert.NoError(t, err)
 
 	tracer := mocktracer.New()
@@ -25,7 +25,7 @@ func TestBufferedSpans_Set_OverBuffer_Bounded(t *testing.T) {
 }
 
 func TestBufferedSpans_Delete(t *testing.T) {
-	spans, err := NewBufferedSpanCache(1)
+	spans, err := NewBufferedSpanStore(1)
 	assert.NoError(t, err)
 
 	tracer := mocktracer.New()
