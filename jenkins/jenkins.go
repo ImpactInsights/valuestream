@@ -17,8 +17,7 @@ type EventTracer struct {
 	traces traces.SpanStore
 }
 
-func (et *EventTracer) handleBuild(be *BuildEvent) error {
-	ctx := context.Background()
+func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 	switch be.State() {
 	case startState:
 		parentID, found := be.ParentSpanID()

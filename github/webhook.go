@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
@@ -9,7 +10,7 @@ import (
 )
 
 type tracer interface {
-	handleEvent(e interface{}) error
+	handleEvent(ctx context.Context, e interface{}) error
 }
 
 type Webhook struct {
@@ -58,7 +59,7 @@ func (webhook *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = webhook.et.handleEvent(event); err != nil {
+	if err = webhook.et.handleEvent(r.Context(), event); err != nil {
 		switch err.(type) {
 		case traces.SpanMissingError:
 			log.WithFields(log.Fields{

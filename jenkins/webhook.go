@@ -1,13 +1,14 @@
 package jenkins
 
 import (
+	"context"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 
 type tracer interface {
-	handleBuild(*BuildEvent) error
+	handleBuild(context.Context, *BuildEvent) error
 }
 
 type Webhook struct {
@@ -25,7 +26,7 @@ func (hook *Webhook) HTTPBuildHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	if err := hook.et.handleBuild(&build); err != nil {
+	if err := hook.et.handleBuild(r.Context(), &build); err != nil {
 		log.Warnf("Error handling build event: %v", err)
 		http.Error(w, "error", http.StatusBadRequest)
 		return
