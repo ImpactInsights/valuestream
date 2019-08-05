@@ -2,6 +2,7 @@ package github
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/url"
 )
@@ -11,7 +12,7 @@ type StubTracer struct {
 	calls       int
 }
 
-func (st *StubTracer) handleEvent(e interface{}) error {
+func (st *StubTracer) handleEvent(ctx context.Context, e interface{}) error {
 	st.calls++
 	return st.ReturnValue
 }

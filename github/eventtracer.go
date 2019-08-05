@@ -15,8 +15,7 @@ type EventTracer struct {
 	traces traces.SpanStore
 }
 
-func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
-	ctx := context.Background()
+func (et *EventTracer) handleIssue(ctx context.Context, issue *github.IssuesEvent) error {
 	ie := IssuesEvent{issue}
 
 	log.WithFields(log.Fields{
@@ -63,8 +62,7 @@ func (et *EventTracer) handleIssue(issue *github.IssuesEvent) error {
 	return nil
 }
 
-func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
-	ctx := context.Background()
+func (et *EventTracer) handlePullRequest(ctx context.Context, pr *github.PullRequestEvent) error {
 	pre := PREvent{pr}
 
 	log.WithFields(log.Fields{
@@ -121,13 +119,13 @@ func (et *EventTracer) handlePullRequest(pr *github.PullRequestEvent) error {
 	return nil
 }
 
-func (et *EventTracer) handleEvent(event interface{}) error {
+func (et *EventTracer) handleEvent(ctx context.Context, event interface{}) error {
 	var err error
 	switch event := event.(type) {
 	case *github.IssuesEvent:
-		err = et.handleIssue(event)
+		err = et.handleIssue(ctx, event)
 	case *github.PullRequestEvent:
-		err = et.handlePullRequest(event)
+		err = et.handlePullRequest(ctx, event)
 	default:
 		err = fmt.Errorf("event type not supported, %+v", event)
 	}

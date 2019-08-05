@@ -93,15 +93,17 @@ func TestEventTracer_handleIssue_EndStateNoStartFound(t *testing.T) {
 	closed := "closed"
 	name := "name"
 	number := 1
-	err := gh.handleIssue(&github.IssuesEvent{
-		Action: &closed,
-		Repo: &github.Repository{
-			Name: &name,
-		},
-		Issue: &github.Issue{
-			Number: &number,
-		},
-	})
+	err := gh.handleIssue(
+		context.Background(),
+		&github.IssuesEvent{
+			Action: &closed,
+			Repo: &github.Repository{
+				Name: &name,
+			},
+			Issue: &github.Issue{
+				Number: &number,
+			},
+		})
 	assert.IsType(t, traces.SpanMissingError{}, err)
 }
 
@@ -195,15 +197,17 @@ func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
 	openedAction := "opened"
 	id := int64(1)
 
-	err := gh.handlePullRequest(&github.PullRequestEvent{
-		Action: &openedAction,
-		PullRequest: &github.PullRequest{
-			ID: &id,
-			Head: &github.PullRequestBranch{
-				Ref: &branchName,
+	err := gh.handlePullRequest(
+		context.Background(),
+		&github.PullRequestEvent{
+			Action: &openedAction,
+			PullRequest: &github.PullRequest{
+				ID: &id,
+				Head: &github.PullRequestBranch{
+					Ref: &branchName,
+				},
 			},
-		},
-	})
+		})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, gh.spans.Count())
 	span, ok := gh.spans.Get(ctx, "1")
