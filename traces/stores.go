@@ -43,10 +43,10 @@ const (
 )
 
 type SpanStore interface {
-	Get(ctx context.Context, id string) (opentracing.Span, bool)
-	Set(ctx context.Context, id string, span opentracing.Span)
-	Delete(ctx context.Context, id string) bool
-	Count() int
+	Get(ctx context.Context, id string) (opentracing.Span, error)
+	Set(ctx context.Context, id string, span opentracing.Span) error
+	Delete(ctx context.Context, id string) error
+	Count() (int, error)
 }
 
 type Spans struct {
@@ -54,30 +54,34 @@ type Spans struct {
 	mu    *sync.Mutex
 }
 
-func (s *Spans) Get(ctx context.Context, id string) (opentracing.Span, bool) {
+func (s *Spans) Get(ctx context.Context, id string) (opentracing.Span, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	span, ok := s.spans[id]
-	return span, ok
+	if !ok {
+		return nil, nil
+	}
+	return span, nil
 }
 
-func (s *Spans) Set(ctx context.Context, id string, span opentracing.Span) {
+func (s *Spans) Set(ctx context.Context, id string, span opentracing.Span) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.spans[id] = span
+	return nil
 }
 
-func (s *Spans) Delete(ctx context.Context, id string) bool {
+func (s *Spans) Delete(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.spans, id)
-	return true
+	return nil
 }
 
-func (s *Spans) Count() int {
+func (s *Spans) Count() (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return len(s.spans)
+	return len(s.spans), nil
 }
 
 func NewMemoryUnboundedSpanStore() *Spans {
@@ -102,7 +106,7 @@ type idSpan struct {
 // Set calculates the index of the buffer to use and
 // then sets the span in the buffer and updates the map
 // to associate the id with the index
-func (s *BufferedSpans) Set(ctx context.Context, id string, span opentracing.Span) {
+func (s *BufferedSpans) Set(ctx context.Context, id string, span opentracing.Span) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -119,36 +123,37 @@ func (s *BufferedSpans) Set(ctx context.Context, id string, span opentracing.Spa
 
 	// remove the map entry as well or else it can grow unbounded
 	s.spans[id] = i
+	return nil
 }
 
 // TODO delete may be missing now that we have a circular buffer
-func (s *BufferedSpans) Delete(ctx context.Context, id string) bool {
+func (s *BufferedSpans) Delete(ctx context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	i, ok := s.spans[id]
 	if !ok {
-		return false
+		return nil
 	}
 	s.buf[i] = nil
 	delete(s.spans, id)
-	return true
+	return nil
 }
 
-func (s *BufferedSpans) Get(ctx context.Context, id string) (opentracing.Span, bool) {
+func (s *BufferedSpans) Get(ctx context.Context, id string) (opentracing.Span, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	i, ok := s.spans[id]
 	if !ok {
-		return nil, false
+		return nil, nil
 	}
-	return s.buf[i].span, true
+	return s.buf[i].span, nil
 }
 
-func (s *BufferedSpans) Count() int {
+func (s *BufferedSpans) Count() (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return len(s.spans)
+	return len(s.spans), nil
 }
 
 func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, name string) {

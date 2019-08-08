@@ -36,7 +36,8 @@ func TestEventTracer_HTTPBuildHandler_StartTrace(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 1, et.spans.Count())
+	c, _ := et.spans.Count()
+	assert.Equal(t, 1, c)
 }
 
 func TestEventTracer_HTTPBuildHandler_EndTrace(t *testing.T) {
@@ -70,7 +71,8 @@ func TestEventTracer_HTTPBuildHandler_EndTrace(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 0, et.spans.Count())
+	c, _ := et.spans.Count()
+	assert.Equal(t, 0, c)
 }
 
 func TestEventTracer_HTTPBuildHandler_MissingStartEvent(t *testing.T) {
@@ -98,5 +100,6 @@ func TestEventTracer_HTTPBuildHandler_MissingStartEvent(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 0, et.spans.Count())
+	c, _ := et.spans.Count()
+	assert.Equal(t, 0, c)
 }
