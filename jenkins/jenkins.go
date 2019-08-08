@@ -32,8 +32,11 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		opts := make([]opentracing.StartSpanOption, 0)
 
 		if found {
-			parentSpan, hasParent := et.traces.Get(ctx, parentID)
-			if hasParent {
+			parentSpan, err := et.traces.Get(ctx, parentID)
+			if err != nil {
+				return err
+			}
+			if parentSpan != nil {
 				opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
 			}
 		}
@@ -45,11 +48,15 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		for k, v := range be.Tags() {
 			span.SetTag(k, v)
 		}
-		et.spans.Set(ctx, be.ID(), span)
+		return et.spans.Set(ctx, be.ID(), span)
 
 	case endState:
-		span, ok := et.spans.Get(ctx, be.ID())
-		if !ok {
+		span, err := et.spans.Get(ctx, be.ID())
+		if err != nil {
+			return err
+		}
+
+		if span == nil {
 			log.WithFields(log.Fields{
 				"service": "jenkins",
 				"event":   "build",
@@ -63,7 +70,7 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		isErr := be.Result != "SUCCESS"
 		span.SetTag("error", isErr)
 		span.Finish()
-		et.spans.Delete(ctx, be.ID())
+		return et.spans.Delete(ctx, be.ID())
 	}
 
 	return nil

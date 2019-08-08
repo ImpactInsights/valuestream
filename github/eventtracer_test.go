@@ -42,7 +42,8 @@ func TestEventTracer_WebhookHandler_IssueOpen(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 1, github.traces.Count())
+	c, _ := github.traces.Count()
+	assert.Equal(t, 1, c)
 }
 
 func TestEventTracer_WebhookHandler_IssueClose(t *testing.T) {
@@ -80,7 +81,8 @@ func TestEventTracer_WebhookHandler_IssueClose(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 0, github.traces.Count())
+	c, _ := github.traces.Count()
+	assert.Equal(t, 0, c)
 }
 
 func TestEventTracer_handleIssue_EndStateNoStartFound(t *testing.T) {
@@ -138,7 +140,8 @@ func TestEventTracer_WebhookHandler_PullRequestOpen(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 1, github.spans.Count())
+	c, _ := github.traces.Count()
+	assert.Equal(t, 1, c)
 }
 
 func TestEventTracer_WebhookHandler_PullRequestClose(t *testing.T) {
@@ -176,7 +179,8 @@ func TestEventTracer_WebhookHandler_PullRequestClose(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, 0, github.spans.Count())
+	c, _ := github.spans.Count()
+	assert.Equal(t, 0, c)
 }
 
 func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
@@ -209,9 +213,10 @@ func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
 			},
 		})
 	assert.NoError(t, err)
-	assert.Equal(t, 1, gh.spans.Count())
-	span, ok := gh.spans.Get(ctx, "1")
-	assert.True(t, ok)
+	c, _ := gh.spans.Count()
+	assert.Equal(t, 1, c)
+	span, err := gh.spans.Get(ctx, "1")
+	assert.NoError(t, err)
 	s := span.(*mocktracer.MockSpan)
 	assert.Equal(t, "pull_request", s.OperationName)
 

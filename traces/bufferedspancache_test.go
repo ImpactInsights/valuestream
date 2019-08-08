@@ -18,11 +18,12 @@ func TestBufferedSpans_Set_OverBuffer_Bounded(t *testing.T) {
 
 	spans.Set(ctx, "span1", span1)
 	spans.Set(ctx, "span2", span2)
-	assert.Equal(t, 1, spans.Count())
+	c, _ := spans.Count()
+	assert.Equal(t, 1, c)
 
 	// check that the span is the second span
-	s2, ok := spans.Get(ctx, "span2")
-	assert.True(t, ok)
+	s2, err := spans.Get(ctx, "span2")
+	assert.NoError(t, err)
 	assert.Equal(t, span2, s2)
 }
 
@@ -35,6 +36,9 @@ func TestBufferedSpans_Delete(t *testing.T) {
 	span1 := tracer.StartSpan("span1")
 	spans.Set(ctx, "span1", span1)
 	spans.Delete(ctx, "span1")
-	assert.Equal(t, 0, spans.Count())
+
+	c, _ := spans.Count()
+
+	assert.Equal(t, 0, c)
 	assert.Nil(t, spans.buf[0])
 }
