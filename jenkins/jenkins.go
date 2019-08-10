@@ -32,7 +32,7 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		opts := make([]opentracing.StartSpanOption, 0)
 
 		if found {
-			parentSpan, err := et.traces.Get(ctx, parentID)
+			parentSpan, err := et.traces.Get(ctx, et.Tracer, parentID)
 			if err != nil {
 				return err
 			}
@@ -51,7 +51,7 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		return et.spans.Set(ctx, be.ID(), span)
 
 	case endState:
-		span, err := et.spans.Get(ctx, be.ID())
+		span, err := et.spans.Get(ctx, et.Tracer, be.ID())
 		if err != nil {
 			return err
 		}

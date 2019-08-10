@@ -22,7 +22,7 @@ func TestBufferedSpans_Set_OverBuffer_Bounded(t *testing.T) {
 	assert.Equal(t, 1, c)
 
 	// check that the span is the second span
-	s2, err := spans.Get(ctx, "span2")
+	s2, err := spans.Get(ctx, tracer, "span2")
 	assert.NoError(t, err)
 	assert.Equal(t, span2, s2)
 }
