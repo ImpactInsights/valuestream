@@ -43,7 +43,7 @@ const (
 )
 
 type SpanStore interface {
-	Get(ctx context.Context, id string) (opentracing.Span, error)
+	Get(ctx context.Context, tracer opentracing.Tracer, id string) (opentracing.Span, error)
 	Set(ctx context.Context, id string, span opentracing.Span) error
 	Delete(ctx context.Context, id string) error
 	Count() (int, error)
@@ -54,7 +54,7 @@ type Spans struct {
 	mu    *sync.Mutex
 }
 
-func (s *Spans) Get(ctx context.Context, id string) (opentracing.Span, error) {
+func (s *Spans) Get(ctx context.Context, tracer opentracing.Tracer, id string) (opentracing.Span, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	span, ok := s.spans[id]
@@ -140,7 +140,7 @@ func (s *BufferedSpans) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *BufferedSpans) Get(ctx context.Context, id string) (opentracing.Span, error) {
+func (s *BufferedSpans) Get(ctx context.Context, tracer opentracing.Tracer, id string) (opentracing.Span, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	i, ok := s.spans[id]
