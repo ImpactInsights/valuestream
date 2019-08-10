@@ -215,7 +215,7 @@ func TestNewEventTracer_handlePullRequest_TracePresent(t *testing.T) {
 	assert.NoError(t, err)
 	c, _ := gh.spans.Count()
 	assert.Equal(t, 1, c)
-	span, err := gh.spans.Get(ctx, "1")
+	span, err := gh.spans.Get(ctx, tracer, "1")
 	assert.NoError(t, err)
 	s := span.(*mocktracer.MockSpan)
 	assert.Equal(t, "pull_request", s.OperationName)

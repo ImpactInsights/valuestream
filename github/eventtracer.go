@@ -49,7 +49,7 @@ func (et *EventTracer) handleIssue(ctx context.Context, issue *github.IssuesEven
 			}
 		}
 
-		span, err := et.traces.Get(ctx, tID)
+		span, err := et.traces.Get(ctx, et.Tracer, tID)
 		if err != nil {
 			return err
 		}
@@ -80,7 +80,7 @@ func (et *EventTracer) handlePullRequest(ctx context.Context, pr *github.PullReq
 		opts := make([]opentracing.StartSpanOption, 0)
 
 		if found {
-			parentSpan, err := et.traces.Get(ctx, parentID)
+			parentSpan, err := et.traces.Get(ctx, et.Tracer, parentID)
 			if err != nil {
 				return err
 			}
@@ -111,7 +111,7 @@ func (et *EventTracer) handlePullRequest(ctx context.Context, pr *github.PullReq
 
 	case traces.EndState:
 		sID := pre.ID()
-		span, err := et.spans.Get(ctx, sID)
+		span, err := et.spans.Get(ctx, et.Tracer, sID)
 		if err != nil {
 			return err
 		}
