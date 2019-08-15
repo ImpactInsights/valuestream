@@ -16,6 +16,20 @@ import (
 	"testing"
 )
 
+
+var	githubPath = "github"
+var	jenkinsPath = "jenkins"
+
+func init() {
+	if value, ok := os.LookupEnv("VS_TEST_GITHUB_PATH"); ok {
+		githubPath = value
+	}
+
+	if value, ok := os.LookupEnv("VS_TEST_JENKINS_PATH"); ok {
+		jenkinsPath = value
+	}
+}
+
 func closePullRequest(t *testing.T, githubURL *url.URL, client *http.Client) {
 	branchName := "vstrace-github-valuestream-1"
 	action := "closed"
@@ -177,11 +191,11 @@ func TestGithubJenkinsTrace(t *testing.T) {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, "github", "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, "jenkins", "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
 
 	openIssue(t, githubURL, client)
 	createPullRequest(t, githubURL, client)
@@ -199,11 +213,11 @@ func TestGithubJenkinsPRBuildJenkinsDeployTrace(t *testing.T) {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, "github", "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, "jenkins", "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
 
 	openIssue(t, githubURL, client)
 	createPullRequest(t, githubURL, client)
