@@ -24,3 +24,23 @@ func TestBuildEvent_BranchID_NoModifiers(t *testing.T) {
 	}
 	assert.Equal(t, "origiin/test", be.BranchID())
 }
+
+func TestBuildEvent_OperationName_Deploy(t *testing.T) {
+	assert.Equal(t, "deploy", BuildEvent{
+		Parameters: map[string]string{
+			"key":  "value",
+			"type": "deploy",
+			"key1": "value",
+		},
+	}.OperationName())
+}
+
+func TestBuildEvent_OperationName_Build(t *testing.T) {
+	assert.Equal(t, "build", BuildEvent{
+		Parameters: map[string]string{
+			"key":  "value",
+			"type": "deploy1",
+			"key1": "value",
+		},
+	}.OperationName())
+}

@@ -64,6 +64,18 @@ func (be BuildEvent) State() BuildState {
 	return endState
 }
 
+// OperationName determines if the event is a `deploy` or a `build`
+// based on the presence of a `type:deploy` tag.
+func (be BuildEvent) OperationName() string {
+	if v, ok := be.Parameters["type"]; ok {
+		if v == "deploy" {
+			return "deploy"
+		}
+	}
+
+	return "build"
+}
+
 // ParentSpanID inspects the Jenkins Event payload to
 // determine what the parent span is.
 // First will check to see if the parent is explicitly specified

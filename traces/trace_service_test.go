@@ -16,9 +16,8 @@ import (
 	"testing"
 )
 
-
-var	githubPath = "github"
-var	jenkinsPath = "jenkins"
+var githubPath = "github"
+var jenkinsPath = "jenkins"
 
 func init() {
 	if value, ok := os.LookupEnv("VS_TEST_GITHUB_PATH"); ok {
@@ -140,6 +139,31 @@ func createJenkinsBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client) 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func createJenkinsDeploy(t *testing.T, jenkinsURL *url.URL, client *http.Client) {
+	event := []byte(`
+{
+	"result": "INPROGRESS",
+	"buildUrl": "aUrl",
+	"jobName": "createJenkinsBuild",
+	"parameters": {
+		"vstrace-trace-id": "vstrace-github-valuestream-1",
+		"type": "deploy"
+    }
+}`)
+
+	req, err := http.NewRequest(
+		"POST",
+		jenkinsURL.String()+"/",
+		bytes.NewReader(event),
+	)
+	assert.NoError(t, err)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
 func jenkinsCIBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client, result string) {
 	event := []byte(fmt.Sprintf(`{
 	"result": "%s",
@@ -225,6 +249,8 @@ func TestGithubJenkinsPRBuildJenkinsDeployTrace(t *testing.T) {
 	jenkinsCIBuild(t, jenkinsURL, client, "SUCCESS")
 	closePullRequest(t, githubURL, client)
 	createJenkinsBuild(t, jenkinsURL, client)
+	finishJenkinsBuild(t, jenkinsURL, client)
+	createJenkinsDeploy(t, jenkinsURL, client)
 	finishJenkinsBuild(t, jenkinsURL, client)
 	closeIssue(t, githubURL, client)
 }

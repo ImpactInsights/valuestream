@@ -42,7 +42,7 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 		}
 
 		span := et.Tracer.StartSpan(
-			"build",
+			be.OperationName(),
 			opts...,
 		)
 		for k, v := range be.Tags() {
