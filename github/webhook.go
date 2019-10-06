@@ -9,6 +9,8 @@ import (
 	"net/http"
 )
 
+const CtxSecretTokenKey = "secret_token"
+
 type tracer interface {
 	handleEvent(ctx context.Context, e interface{}) error
 }
@@ -25,15 +27,24 @@ func NewWebhook(et tracer, secretToken []byte) *Webhook {
 	}
 }
 
-func (webhook *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var payload []byte
-
-	if webhook.secretToken != nil {
-		payload, err = github.ValidatePayload(r, webhook.secretToken)
-	} else {
-		payload, err = ioutil.ReadAll(r.Body)
+func (webhook *Webhook) payload(r *http.Request, globalSecretToken []byte) ([]byte, error) {
+	// check for a request scoped token
+	k := r.Context().Value(CtxSecretTokenKey)
+	v, ok := k.([]byte)
+	if ok && v != nil {
+		return github.ValidatePayload(r, v)
 	}
+
+	// no context based token check for global
+	if globalSecretToken != nil {
+		return github.ValidatePayload(r, globalSecretToken)
+	}
+
+	return ioutil.ReadAll(r.Body)
+}
+
+func (webhook *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
+	payload, err := webhook.payload(r, webhook.secretToken)
 
 	log.WithFields(log.Fields{
 		"event": string(payload),
