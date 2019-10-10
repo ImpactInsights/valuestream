@@ -65,7 +65,12 @@ func (et *EventTracer) handleBuild(ctx context.Context, be *BuildEvent) error {
 			return nil
 		}
 		for k, v := range be.Tags() {
-			span.SetTag(k, v)
+			// if current tag is empty do not override
+			// might have to add string pointers for values
+			// to check if field is provided
+			if v != "" {
+				span.SetTag(k, v)
+			}
 		}
 		isErr := be.Result != "SUCCESS"
 		span.SetTag("error", isErr)
