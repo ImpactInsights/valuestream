@@ -37,6 +37,7 @@ func (ie IssuesEvent) Tags() map[string]interface{} {
 		tags["scm.repository.id"] = ie.Repo.GetID()
 		tags["scm.repository.url"] = ie.Repo.GetURL()
 		tags["scm.repository.name"] = ie.Repo.GetName()
+		tags["issue.project.name "] = ie.Repo.GetName()
 		tags["scm.repository.full_name"] = ie.Repo.GetFullName()
 		tags["scm.repository.private"] = ie.Repo.GetPrivate()
 	}

@@ -83,7 +83,6 @@ func buildRepos() []github.Repository {
 
 func buildJenkinsEvent() jenkins.BuildEvent {
 	number := rand.Int()
-
 	return jenkins.BuildEvent{
 		Result:      "INPROGRESS",
 		CiURL:       "http://jenkins-ci.com/",
