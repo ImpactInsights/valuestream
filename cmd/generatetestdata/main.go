@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"time"
 )
@@ -20,6 +21,19 @@ const (
 	closed      string = "closed"
 	timeoutUnit        = time.Second
 )
+
+var githubPath = "github"
+var jenkinsPath = "jenkins"
+
+func init() {
+	if value, ok := os.LookupEnv("VS_TEST_GITHUB_PATH"); ok {
+		githubPath = value
+	}
+
+	if value, ok := os.LookupEnv("VS_TEST_JENKINS_PATH"); ok {
+		jenkinsPath = value
+	}
+}
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -170,11 +184,11 @@ func main() {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, "github", "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, "jenkins", "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
 
 	client := &http.Client{}
 
