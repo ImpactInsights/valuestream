@@ -2,6 +2,7 @@ package github
 
 import (
 	"fmt"
+	"github.com/ImpactInsights/valuestream/events"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	"regexp"
@@ -17,18 +18,18 @@ func (ie IssuesEvent) ID() string {
 	return strconv.Itoa(int(*ie.Issue.ID))
 }
 
-func (ie IssuesEvent) State() traces.SpanState {
+func (ie IssuesEvent) State() events.SpanState {
 	action := *ie.Action
 
 	if action == "opened" || action == "reopened" {
-		return traces.StartState
+		return events.StartState
 	}
 
 	if action == "closed" {
-		return traces.EndState
+		return events.EndState
 	}
 
-	return traces.IntermediaryState
+	return events.IntermediaryState
 }
 
 func (ie IssuesEvent) Tags() map[string]interface{} {
@@ -139,16 +140,16 @@ func (pr PREvent) ParentSpanID() (string, bool) {
 	return traces.PrefixISSUE(matches[0]), true
 }
 
-func (pr PREvent) State() traces.SpanState {
+func (pr PREvent) State() events.SpanState {
 	action := *pr.Action
 
 	if action == "opened" || action == "reopened" {
-		return traces.StartState
+		return events.StartState
 	}
 
 	if action == "closed" {
-		return traces.EndState
+		return events.EndState
 	}
 
-	return traces.IntermediaryState
+	return events.IntermediaryState
 }
