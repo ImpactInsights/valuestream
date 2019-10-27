@@ -3,7 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
-	"github.com/ImpactInsights/valuestream/events"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	"github.com/opentracing/opentracing-go"
@@ -25,7 +25,7 @@ func (et *EventTracer) handleIssue(ctx context.Context, issue *github.IssuesEven
 	}).Infof("handleIssue()")
 
 	switch ie.State() {
-	case events.StartState:
+	case webhooks.StartState:
 		span := et.Tracer.StartSpan(
 			"issue",
 		)
@@ -38,7 +38,7 @@ func (et *EventTracer) handleIssue(ctx context.Context, issue *github.IssuesEven
 		}
 		return nil
 
-	case events.EndState:
+	case webhooks.EndState:
 		tID, found := ie.TraceID()
 		// this means the payload does not contain an identifiable trace
 		// cannot continue
@@ -76,7 +76,7 @@ func (et *EventTracer) handlePullRequest(ctx context.Context, pr *github.PullReq
 	}).Infof("handlePullRequest()")
 
 	switch pre.State() {
-	case events.StartState:
+	case webhooks.StartState:
 		parentID, found := pre.ParentSpanID()
 		opts := make([]opentracing.StartSpanOption, 0)
 
@@ -110,7 +110,7 @@ func (et *EventTracer) handlePullRequest(ctx context.Context, pr *github.PullReq
 		}
 		return nil
 
-	case events.EndState:
+	case webhooks.EndState:
 		sID := pre.ID()
 		span, err := et.spans.Get(ctx, et.Tracer, sID)
 		if err != nil {

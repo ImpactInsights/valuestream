@@ -2,7 +2,7 @@ package github
 
 import (
 	"fmt"
-	"github.com/ImpactInsights/valuestream/events"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	"regexp"
@@ -18,18 +18,18 @@ func (ie IssuesEvent) ID() string {
 	return strconv.Itoa(int(*ie.Issue.ID))
 }
 
-func (ie IssuesEvent) State() events.SpanState {
+func (ie IssuesEvent) State() webhooks.SpanState {
 	action := *ie.Action
 
 	if action == "opened" || action == "reopened" {
-		return events.StartState
+		return webhooks.StartState
 	}
 
 	if action == "closed" {
-		return events.EndState
+		return webhooks.EndState
 	}
 
-	return events.IntermediaryState
+	return webhooks.IntermediaryState
 }
 
 func (ie IssuesEvent) Tags() map[string]interface{} {
@@ -140,16 +140,16 @@ func (pr PREvent) ParentSpanID() (string, bool) {
 	return traces.PrefixISSUE(matches[0]), true
 }
 
-func (pr PREvent) State() events.SpanState {
+func (pr PREvent) State() webhooks.SpanState {
 	action := *pr.Action
 
 	if action == "opened" || action == "reopened" {
-		return events.StartState
+		return webhooks.StartState
 	}
 
 	if action == "closed" {
-		return events.EndState
+		return webhooks.EndState
 	}
 
-	return events.IntermediaryState
+	return webhooks.IntermediaryState
 }
