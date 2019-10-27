@@ -13,6 +13,15 @@ const (
 	SignatureHeader = "X-VS-Signature"
 )
 
+func New(es EventSource, sk []byte, ts traces.SpanStore, spans traces.SpanStore) (*Webhook, error) {
+	return &Webhook{
+		EventSource: es,
+		SecretKey:   sk,
+		Traces:      ts,
+		Spans:       spans,
+	}, nil
+}
+
 type Webhook struct {
 	EventSource EventSource
 	SecretKey   []byte

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 )
 
@@ -8,36 +9,51 @@ type Event struct {
 	Identifier string `json:"id"`
 	Action     string
 	ParentID   *string
+	Error      bool
 	Metadata   map[string]interface{}
 }
 
 // ID is how an INDIVIDUAL event is referenced internally
-func (e Event) ID() string {
-	return e.Identifier
+func (e Event) SpanID() (string, error) {
+	return e.Identifier, nil
+}
+
+func (e Event) OperationName() string {
+	return "custom_http"
 }
 
 // ParentSpanID allows this HTTP event to reference any other
 // event.
-func (e Event) ParentSpanID() *string {
-	return e.ParentID
+func (e Event) ParentSpanID() (*string, error) {
+	return e.ParentID, nil
+}
+
+func (e Event) IsError() (bool, error) {
+	return e.Error, nil
 }
 
 // TraceID is how other events reference this event!
-func (e Event) TraceID() (string, bool) {
-	return "", false
+func (e Event) TraceID() (*string, error) {
+	spanID, err := e.SpanID()
+	if err != nil {
+		return nil, err
+	}
+
+	traceID := fmt.Sprintf("vstrace-custom-http-%s", spanID)
+	return &traceID, nil
 }
 
-func (e Event) State() webhooks.SpanState {
+func (e Event) State() (webhooks.SpanState, error) {
 	switch e.Action {
 	case "start":
-		return webhooks.StartState
+		return webhooks.StartState, nil
 	case "end":
-		return webhooks.EndState
+		return webhooks.EndState, nil
 	}
-	return webhooks.IntermediaryState
+	return webhooks.IntermediaryState, nil
 }
 
-func (e Event) Tags() map[string]interface{} {
+func (e Event) Tags() (map[string]interface{}, error) {
 
 	tags := make(map[string]interface{})
 
@@ -46,5 +62,5 @@ func (e Event) Tags() map[string]interface{} {
 	}
 
 	tags["service"] = "http"
-	return tags
+	return tags, nil
 }
