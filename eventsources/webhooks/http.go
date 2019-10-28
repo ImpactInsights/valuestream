@@ -125,7 +125,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, e Event) error {
 	}
 
 	if traceID != nil {
-		return wh.Traces.Set(ctx, *traceID, span)
+		wh.Traces.Set(ctx, *traceID, span)
 	}
 
 	// else we need to just set the span for future events
