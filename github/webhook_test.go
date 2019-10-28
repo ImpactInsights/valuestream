@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -130,7 +131,7 @@ func TestWebhook_payload_RequestSecretToken(t *testing.T) {
 	}
 	req.Header.Set("X-Github-Event", "issues")
 	req.Header.Set("Content-type", "application/json")
-	ctx := context.WithValue(req.Context(), CtxSecretTokenKey, []byte("secret"))
+	ctx := context.WithValue(req.Context(), webhooks.CtxSecretTokenKey, []byte("secret"))
 	req = req.WithContext(ctx)
 
 	webhook := NewWebhook(&StubTracer{}, nil)

@@ -1,20 +1,22 @@
 ---
 version: '2'
 services:
-  valuestream:
-    build: .
-    ports:
-      - 5000:5000
-    environment:
-      - JAEGER_AGENT_HOST=jaeger-agent
-      - JAEGER_REPORTER_LOG_SPANS=1
-      - JAEGER_SAMPLER_TYPE=const
-      - JAEGER_SAMPLER_PARAM=1
-    command: "valuestream -addr=:5000 -tracer=jaeger"
-    networks:
-    - elastic-jaeger
-    depends_on:
-      - jaeger-agent
+#
+#  valuestream:
+#    build: .
+#    ports:
+#      - 5000:5000
+#    environment:
+#      - JAEGER_AGENT_HOST=jaeger-agent
+#      - JAEGER_REPORTER_LOG_SPANS=1
+#      - JAEGER_SAMPLER_TYPE=const
+#      - JAEGER_SAMPLER_PARAM=1
+#    command: "valuestream -addr=:5000 -tracer=jaeger"
+#    networks:
+#    - elastic-jaeger
+#    depends_on:
+#      - jaeger-agent
+#
   els:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.0.0
     restart: always

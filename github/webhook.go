@@ -2,14 +2,13 @@ package github
 
 import (
 	"context"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
-
-const CtxSecretTokenKey = "secret_token"
 
 type tracer interface {
 	handleEvent(ctx context.Context, e interface{}) error
@@ -29,7 +28,7 @@ func NewWebhook(et tracer, secretToken []byte) *Webhook {
 
 func (webhook *Webhook) payload(r *http.Request, globalSecretToken []byte) ([]byte, error) {
 	// check for a request scoped token
-	k := r.Context().Value(CtxSecretTokenKey)
+	k := r.Context().Value(webhooks.CtxSecretTokenKey)
 	v, ok := k.([]byte)
 	if ok && v != nil {
 		return github.ValidatePayload(r, v)
