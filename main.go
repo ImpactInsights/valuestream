@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
+	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/github"
 	"github.com/ImpactInsights/valuestream/jenkins"
 	"github.com/ImpactInsights/valuestream/tracer"
@@ -14,8 +15,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"github.com/uber/jaeger-client-go"
-	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"io"
 	"net/http"
 	"os"
@@ -79,31 +78,6 @@ func init() {
 	)
 }
 
-// initJaeger returns an instance of Jaeger Tracer that samples 100% of traces and logs all spans to stdout.
-func initJaeger(service string) (opentracing.Tracer, io.Closer) {
-	cfg, err := jaegercfg.FromEnv()
-	if err != nil {
-		panic(err)
-	}
-
-	tracer, closer, err := cfg.New(service, jaegercfg.Logger(jaeger.StdLogger))
-	if err != nil {
-		panic(fmt.Sprintf("ERROR: cannot init Jaeger: %v\n", err))
-	}
-	return tracer, closer
-}
-
-func initLightstep(service string, accessToken string) opentracing.Tracer {
-	lightStepTracer := lightstep.NewTracer(lightstep.Options{
-		Collector:   lightstep.Endpoint{},
-		AccessToken: accessToken,
-		Tags: map[string]interface{}{
-			lightstep.ComponentNameKey: service,
-		},
-	})
-	return lightStepTracer
-}
-
 func main() {
 	var addr = flag.String("addr", "127.0.0.1:5000", "addr/port for the tes")
 	var tracerImplName = flag.String("tracer", "logging", "tracer implementation to use: 'logger|jaeger|lightstep'")
@@ -112,34 +86,42 @@ func main() {
 	ctx := context.Background()
 	var githubTracer opentracing.Tracer
 	var jenkinsTracer opentracing.Tracer
+	var customHTTPTracer opentracing.Tracer
 
 	switch *tracerImplName {
 	case "jaeger":
 		var githubTracerCloser io.Closer
 		var jenkinsTracerCloser io.Closer
+		var customHTTPTracerCloser io.Closer
 
 		log.Infof("initializing tracer: jaeger")
-		githubTracer, githubTracerCloser = initJaeger("github")
+		githubTracer, githubTracerCloser = tracer.InitJaeger("github")
 		defer githubTracerCloser.Close()
 
-		jenkinsTracer, jenkinsTracerCloser = initJaeger("jenkins")
+		jenkinsTracer, jenkinsTracerCloser = tracer.InitJaeger("jenkins")
 		defer jenkinsTracerCloser.Close()
+
+		customHTTPTracer, customHTTPTracerCloser = tracer.InitJaeger("custom_http")
+		defer customHTTPTracerCloser.Close()
 
 	case "lightstep":
 
 		log.Infof("initializing tracer: lightstep")
 
 		accessToken := os.Getenv("VS_LIGHTSTEP_ACCESS_TOKEN")
-		githubTracer = initLightstep("github", accessToken)
-		jenkinsTracer = initLightstep("jenkins", accessToken)
+		githubTracer = tracer.InitLightstep("github", accessToken)
+		jenkinsTracer = tracer.InitLightstep("jenkins", accessToken)
+		customHTTPTracer = tracer.InitLightstep("custom_http", accessToken)
 
 		defer lightstep.Close(ctx, githubTracer)
 		defer lightstep.Close(ctx, jenkinsTracer)
+		defer lightstep.Close(ctx, customHTTPTracer)
 
 	default:
 		log.Infof("initializing tracer: logging")
 		githubTracer = tracer.LoggingTracer{}
 		jenkinsTracer = tracer.LoggingTracer{}
+		customHTTPTracer = tracer.LoggingTracer{}
 	}
 
 	ts, err := traces.NewBufferedSpanStore(1000)
@@ -183,6 +165,24 @@ func main() {
 		githubSecretToken,
 	)
 
+	customHTTP, err := customhttp.NewSource(customHTTPTracer)
+	if err != nil {
+		panic(err)
+	}
+
+	customHTTPSpans, err := traces.NewBufferedSpanStore(500)
+	if err != nil {
+		panic(err)
+	}
+	go customHTTPSpans.Monitor(ctx, time.Second*20, customHTTP.Name())
+
+	customHTTPWebhook, err := webhooks.New(
+		customHTTP,
+		nil,
+		ts,
+		customHTTPSpans,
+	)
+
 	r := mux.NewRouter()
 
 	r.Handle("/jenkins/",
@@ -191,6 +191,17 @@ func main() {
 			promhttp.InstrumentHandlerCounter(counter,
 				promhttp.InstrumentHandlerResponseSize(responseSize,
 					http.HandlerFunc(jenkins.HTTPBuildHandler),
+				),
+			),
+		),
+	)
+
+	r.Handle("/customhttp/",
+		promhttp.InstrumentHandlerDuration(
+			duration.MustCurryWith(prometheus.Labels{"handler": "custom_http"}),
+			promhttp.InstrumentHandlerCounter(counter,
+				promhttp.InstrumentHandlerResponseSize(responseSize,
+					http.HandlerFunc(customHTTPWebhook.Handler),
 				),
 			),
 		),
@@ -206,6 +217,7 @@ func main() {
 			),
 		),
 	)
+
 	r.Handle("/metrics", promhttp.Handler())
 
 	srv := &http.Server{

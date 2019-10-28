@@ -34,14 +34,6 @@ func init() {
 	)
 }
 
-type SpanState int
-
-const (
-	StartState SpanState = iota
-	EndState
-	IntermediaryState
-)
-
 type SpanStore interface {
 	Get(ctx context.Context, tracer opentracing.Tracer, id string) (opentracing.Span, error)
 	Set(ctx context.Context, id string, span opentracing.Span) error
