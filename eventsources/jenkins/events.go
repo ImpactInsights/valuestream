@@ -87,12 +87,12 @@ func (be BuildEvent) ParentSpanID() (*string, error) {
 	if found {
 		return &prefixed, nil
 	}
-	/*
-		// TODO this needs more intelligent SCM specific parsing
-		if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
-			return traces.PrefixSCM(be.branchID()), true
-		}
-	*/
+
+	branchID := traces.PrefixSCM(be.branchID())
+
+	if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
+		return &branchID, nil
+	}
 	return nil, nil
 }
 

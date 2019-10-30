@@ -4,9 +4,10 @@ import (
 	"context"
 	"flag"
 	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
+	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/github"
-	"github.com/ImpactInsights/valuestream/jenkins"
+	// "github.com/ImpactInsights/valuestream/jenkins"
 	"github.com/ImpactInsights/valuestream/tracer"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/gorilla/mux"
@@ -136,13 +137,20 @@ func main() {
 	}
 	go jenkinsSpans.Monitor(ctx, time.Second*60, "jenkins")
 
-	jenkins := jenkins.NewWebhook(
-		jenkins.NewEventTracer(
-			jenkinsTracer,
-			ts,
-			jenkinsSpans,
-		),
+	jenkinsSource, err := jenkins.NewSource(jenkinsTracer)
+	if err != nil {
+		panic(err)
+	}
+
+	jenkins, err := webhooks.New(
+		jenkinsSource,
+		nil,
+		ts,
+		jenkinsSpans,
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	githubSpans, err := traces.NewBufferedSpanStore(500)
 	if err != nil {
@@ -190,7 +198,7 @@ func main() {
 			duration.MustCurryWith(prometheus.Labels{"handler": "jenkins_build"}),
 			promhttp.InstrumentHandlerCounter(counter,
 				promhttp.InstrumentHandlerResponseSize(responseSize,
-					http.HandlerFunc(jenkins.HTTPBuildHandler),
+					http.HandlerFunc(jenkins.Handler),
 				),
 			),
 		),

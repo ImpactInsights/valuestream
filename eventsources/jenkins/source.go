@@ -29,3 +29,9 @@ func (s *Source) Event(r *http.Request, payload []byte) (webhooks.Event, error) 
 func (s *Source) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, error) {
 	return ioutil.ReadAll(r.Body)
 }
+
+func NewSource(tracer opentracing.Tracer) (*Source, error) {
+	return &Source{
+		tracer: tracer,
+	}, nil
+}
