@@ -156,6 +156,14 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, e Event) error {
 			Err: fmt.Errorf("span not found for github span: %q", spanID),
 		}
 	}
+
+	// TODO add tags on end event
+	isE, err := e.IsError()
+	if err != nil {
+		return err
+	}
+
+	span.SetTag("error", isE)
 	span.Finish()
 
 	if err := wh.Spans.Delete(ctx, spanID); err != nil {
