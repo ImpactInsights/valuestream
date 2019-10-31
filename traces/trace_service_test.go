@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	gh "github.com/ImpactInsights/valuestream/github"
+	gh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"net/http"
