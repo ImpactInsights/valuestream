@@ -3,16 +3,12 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"strings"
 )
 
 type BuildState int
-
-const (
-	startState BuildState = iota
-	endState
-)
 
 type ScmInfo struct {
 	URL    string  `json:"url"`
@@ -44,11 +40,11 @@ type BuildEvent struct {
 	EndTime       int      `json:"endTime"`
 }
 
-func (be BuildEvent) ID() string {
-	return be.BuildURL
+func (be BuildEvent) SpanID() (string, error) {
+	return be.BuildURL, nil
 }
 
-func (be BuildEvent) BranchID() string {
+func (be BuildEvent) branchID() string {
 	branch := *be.ScmInfo.Branch
 	if strings.HasPrefix(branch, "origin/") {
 		return strings.TrimPrefix(branch, "origin/")
@@ -56,12 +52,12 @@ func (be BuildEvent) BranchID() string {
 	return branch
 }
 
-func (be BuildEvent) State() BuildState {
+func (be BuildEvent) State() (webhooks.SpanState, error) {
 	if be.Result == "INPROGRESS" {
-		return startState
+		return webhooks.StartState, nil
 	}
 
-	return endState
+	return webhooks.EndState, nil
 }
 
 // OperationName determines if the event is a `deploy` or a `build`
@@ -76,22 +72,28 @@ func (be BuildEvent) OperationName() string {
 	return "build"
 }
 
+func (be BuildEvent) IsError() (bool, error) {
+	return be.Result != "SUCCESS", nil
+}
+
 // ParentSpanID inspects the Jenkins Event payload to
 // determine what the parent span is.
 // First will check to see if the parent is explicitly specified
 // in build params
 // Then will check if the build is part of SCM
-func (be BuildEvent) ParentSpanID() (string, bool) {
+func (be BuildEvent) ParentSpanID() (*string, error) {
 	id, found := be.Parameters["vstrace-trace-id"]
+	prefixed := traces.PrefixISSUE(id)
 	if found {
-		return traces.PrefixISSUE(id), found
-	}
-	// TODO this needs more intelligent SCM specific parsing
-	if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
-		return traces.PrefixSCM(be.BranchID()), true
+		return &prefixed, nil
 	}
 
-	return "", false
+	branchID := traces.PrefixSCM(be.branchID())
+
+	if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
+		return &branchID, nil
+	}
+	return nil, nil
 }
 
 func (be BuildEvent) String() (string, error) {
@@ -99,7 +101,11 @@ func (be BuildEvent) String() (string, error) {
 	return string(b), err
 }
 
-func (be BuildEvent) Tags() map[string]interface{} {
+func (be BuildEvent) TraceID() (*string, error) {
+	return nil, nil
+}
+
+func (be BuildEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
 	tags["service"] = "jenkins"
 	tags["build.result"] = be.Result
@@ -116,11 +122,11 @@ func (be BuildEvent) Tags() map[string]interface{} {
 	if be.ScmInfo != nil {
 		tags["scm.head.url"] = be.ScmInfo.URL
 		tags["scm.head.sha"] = be.ScmInfo.Commit
-		tags["scm.branch"] = be.BranchID()
+		tags["scm.branch"] = be.branchID()
 	}
 
 	for k, v := range be.Parameters {
 		tags[fmt.Sprintf("build.parameter.%s", k)] = v
 	}
-	return tags
+	return tags, nil
 }

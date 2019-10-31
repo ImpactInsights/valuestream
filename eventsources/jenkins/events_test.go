@@ -12,7 +12,7 @@ func TestBuildEvent_BranchID_Origin(t *testing.T) {
 			Branch: &branch,
 		},
 	}
-	assert.Equal(t, "test", be.BranchID())
+	assert.Equal(t, "test", be.branchID())
 }
 
 func TestBuildEvent_BranchID_NoModifiers(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBuildEvent_BranchID_NoModifiers(t *testing.T) {
 			Branch: &branch,
 		},
 	}
-	assert.Equal(t, "origiin/test", be.BranchID())
+	assert.Equal(t, "origiin/test", be.branchID())
 }
 
 func TestBuildEvent_OperationName_Deploy(t *testing.T) {
