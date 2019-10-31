@@ -2,6 +2,7 @@ package github
 
 import (
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources/types"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
@@ -23,7 +24,10 @@ func (ie IssuesEvent) SpanID() (string, error) {
 		return "", fmt.Errorf("event does not contain Issue.ID")
 	}
 
-	return strconv.Itoa(int(*ie.Issue.ID)), nil
+	return traces.PrefixWith(
+		types.IssueEventType,
+		strconv.Itoa(int(*ie.Issue.ID)),
+	), nil
 }
 
 func (ie IssuesEvent) State() (webhooks.SpanState, error) {
@@ -87,7 +91,8 @@ func (ie IssuesEvent) TraceID() (*string, error) {
 	if ie.Repo == nil || ie.Repo.Name == nil || ie.Issue == nil || ie.Issue.Number == nil {
 		return nil, nil
 	}
-	traceID := traces.PrefixISSUE(
+	traceID := traces.PrefixWith(
+		types.IssueEventType,
 		fmt.Sprintf("vstrace-github-%s-%d", ie.Repo.GetName(), ie.Issue.GetNumber()),
 	)
 	return &traceID, nil
@@ -172,7 +177,13 @@ func (pr PREvent) ParentSpanID() (*string, error) {
 	if len(matches) == 0 {
 		return nil, nil
 	}
-	id := traces.PrefixISSUE(matches[0])
+	// TODO the type needs to be included in the trace in order
+	// to support referencing multiple different types....
+
+	id := traces.PrefixWith(
+		types.IssueEventType,
+		matches[0],
+	)
 	return &id, nil
 }
 
