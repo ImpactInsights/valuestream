@@ -6,7 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	gh "github.com/ImpactInsights/valuestream/github"
+	gh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -74,14 +74,16 @@ func createPullRequest(t *testing.T, githubURL *url.URL, client *http.Client) {
 func openIssue(t *testing.T, githubURL *url.URL, client *http.Client) {
 	repoName := "valuestream"
 	action := "opened"
-	id := 1
+	id := int64(1)
+	number := 1
 	i := &github.IssuesEvent{
 		Action: &action,
 		Repo: &github.Repository{
 			Name: &repoName,
 		},
 		Issue: &github.Issue{
-			Number: &id,
+			ID:     &id,
+			Number: &number,
 		},
 	}
 
@@ -96,14 +98,16 @@ func openIssue(t *testing.T, githubURL *url.URL, client *http.Client) {
 func closeIssue(t *testing.T, githubURL *url.URL, client *http.Client) {
 	repoName := "valuestream"
 	action := "closed"
-	id := 1
+	id := int64(1)
+	number := 1
 	i := &github.IssuesEvent{
 		Action: &action,
 		Repo: &github.Repository{
 			Name: &repoName,
 		},
 		Issue: &github.Issue{
-			Number: &id,
+			ID:     &id,
+			Number: &number,
 		},
 	}
 

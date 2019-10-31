@@ -31,7 +31,7 @@ func TestPullRequestEvent_ParentSpanID(t *testing.T) {
 	for _, tt := range traceIDTests {
 		t.Run(tt.name, func(t *testing.T) {
 			match, _ := tt.pr.ParentSpanID()
-			assert.Equal(t, tt.expected, match)
+			assert.Equal(t, tt.expected, *match)
 		})
 	}
 }

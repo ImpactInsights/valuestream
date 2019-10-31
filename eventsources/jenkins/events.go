@@ -3,6 +3,7 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources/types"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"strings"
@@ -83,7 +84,7 @@ func (be BuildEvent) IsError() (bool, error) {
 // Then will check if the build is part of SCM
 func (be BuildEvent) ParentSpanID() (*string, error) {
 	id, found := be.Parameters["vstrace-trace-id"]
-	prefixed := traces.PrefixISSUE(id)
+	prefixed := traces.PrefixWith(types.IssueEventType, id)
 	if found {
 		return &prefixed, nil
 	}
