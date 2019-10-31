@@ -2,20 +2,9 @@ package github
 
 import (
 	"bytes"
-	"context"
 	"net/http"
 	"net/url"
 )
-
-type StubTracer struct {
-	ReturnValue error
-	calls       int
-}
-
-func (st *StubTracer) handleEvent(ctx context.Context, e interface{}) error {
-	st.calls++
-	return st.ReturnValue
-}
 
 func PostEvent(payload []byte, eventType string, u *url.URL, client *http.Client) (*http.Response, error) {
 	req, err := http.NewRequest(

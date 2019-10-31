@@ -151,9 +151,10 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, e Event) error {
 	if err != nil {
 		return err
 	}
+
 	if span == nil {
 		return traces.SpanMissingError{
-			Err: fmt.Errorf("span not found for github span: %q", spanID),
+			Err: fmt.Errorf("span not found for span: %q", spanID),
 		}
 	}
 

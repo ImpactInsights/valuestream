@@ -9,3 +9,7 @@ func PrefixSCM(s string) string {
 func PrefixISSUE(s string) string {
 	return fmt.Sprintf("ISSUE-%s", s)
 }
+
+func PrefixWith(prefix string, s string) string {
+	return fmt.Sprintf("%s-%s", prefix, s)
+}

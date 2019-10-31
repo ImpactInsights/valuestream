@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/ImpactInsights/valuestream/eventsources/github"
 	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
 	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
-	"github.com/ImpactInsights/valuestream/github"
 	"github.com/ImpactInsights/valuestream/tracer"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/gorilla/mux"
@@ -163,14 +163,20 @@ func main() {
 		githubSecretToken = []byte(val)
 	}
 
-	github := github.NewWebhook(
-		github.NewEventTracer(
-			githubTracer,
-			ts,
-			githubSpans,
-		),
+	githubSource, err := github.NewSource(githubTracer)
+	if err != nil {
+		panic(err)
+	}
+
+	github, err := webhooks.New(
+		githubSource,
 		githubSecretToken,
+		ts,
+		githubSpans,
 	)
+	if err != nil {
+		panic(err)
+	}
 
 	customHTTP, err := customhttp.NewSource(customHTTPTracer)
 	if err != nil {

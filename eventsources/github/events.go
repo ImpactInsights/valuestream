@@ -2,6 +2,7 @@ package github
 
 import (
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources/types"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
@@ -13,26 +14,51 @@ type IssuesEvent struct {
 	*github.IssuesEvent
 }
 
-// ID identifies the issue event by its github Issue.ID
-func (ie IssuesEvent) ID() string {
-	return strconv.Itoa(int(*ie.Issue.ID))
+func (ie IssuesEvent) OperationName() string {
+	return "issue"
 }
 
-func (ie IssuesEvent) State() webhooks.SpanState {
+// ID identifies the issue event by its github Issue.ID
+func (ie IssuesEvent) SpanID() (string, error) {
+	if ie.Issue == nil || ie.Issue.ID == nil {
+		return "", fmt.Errorf("event does not contain Issue.ID")
+	}
+
+	return traces.PrefixWith(
+		types.IssueEventType,
+		strconv.Itoa(int(*ie.Issue.ID)),
+	), nil
+}
+
+func (ie IssuesEvent) State() (webhooks.SpanState, error) {
+	if ie.Action == nil {
+		return webhooks.UnknownState, fmt.Errorf("event does not contain action")
+	}
+
 	action := *ie.Action
 
 	if action == "opened" || action == "reopened" {
-		return webhooks.StartState
+		return webhooks.StartState, nil
 	}
 
 	if action == "closed" {
-		return webhooks.EndState
+		return webhooks.EndState, nil
 	}
 
-	return webhooks.IntermediaryState
+	return webhooks.IntermediaryState, nil
 }
 
-func (ie IssuesEvent) Tags() map[string]interface{} {
+func (ie IssuesEvent) IsError() (bool, error) {
+	return false, nil
+}
+
+// TODO - Issues can reference other issues inside their body
+// to model 'epics' or issues of issues
+func (ie IssuesEvent) ParentSpanID() (*string, error) {
+	return nil, nil
+}
+
+func (ie IssuesEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
 	if ie.Repo != nil {
 		tags["scm.repository.id"] = ie.Repo.GetID()
@@ -57,21 +83,31 @@ func (ie IssuesEvent) Tags() map[string]interface{} {
 
 	tags["service"] = "github"
 
-	return tags
+	return tags, nil
 }
 
-func (ie IssuesEvent) TraceID() (string, bool) {
+func (ie IssuesEvent) TraceID() (*string, error) {
 	// vstrace-github-{{repository.name}}-{{issue.number}}
 	if ie.Repo == nil || ie.Repo.Name == nil || ie.Issue == nil || ie.Issue.Number == nil {
-		return "", false
+		return nil, nil
 	}
-	return traces.PrefixISSUE(
+	traceID := traces.PrefixWith(
+		types.IssueEventType,
 		fmt.Sprintf("vstrace-github-%s-%d", ie.Repo.GetName(), ie.Issue.GetNumber()),
-	), true
+	)
+	return &traceID, nil
 }
 
 type PREvent struct {
 	*github.PullRequestEvent
+}
+
+func (pr PREvent) OperationName() string {
+	return "pull_request"
+}
+
+func (pr PREvent) TraceID() (*string, error) {
+	return pr.BranchRef(), nil
 }
 
 func (pr PREvent) BranchRef() *string {
@@ -85,11 +121,15 @@ func (pr PREvent) BranchRef() *string {
 	return &res
 }
 
-func (pr PREvent) ID() string {
-	return strconv.Itoa(int(*pr.PullRequest.ID))
+func (pr PREvent) SpanID() (string, error) {
+	if pr.PullRequest == nil || pr.PullRequest.ID == nil {
+		return "", fmt.Errorf("event must contain pull request id")
+	}
+	prID := *pr.PullRequest.ID
+	return strconv.Itoa(int(prID)), nil
 }
 
-func (pr PREvent) Tags() map[string]interface{} {
+func (pr PREvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
 	tags["service"] = "github"
 
@@ -127,29 +167,43 @@ func (pr PREvent) Tags() map[string]interface{} {
 		tags["scm.repository.private"] = pr.Repo.GetPrivate()
 	}
 
-	return tags
+	return tags, nil
 }
 
 // ParentSpanID inspects the PullRequestEvent payload for any references to a parent trace
-func (pr PREvent) ParentSpanID() (string, bool) {
+func (pr PREvent) ParentSpanID() (*string, error) {
 	r, _ := regexp.Compile("vstrace-[0-9A-Za-z]+-[0-9A-Za-z]+-[0-9]+")
 	matches := r.FindStringSubmatch(*pr.PullRequest.Head.Ref)
 	if len(matches) == 0 {
-		return "", false
+		return nil, nil
 	}
-	return traces.PrefixISSUE(matches[0]), true
+	// TODO the type needs to be included in the trace in order
+	// to support referencing multiple different types....
+
+	id := traces.PrefixWith(
+		types.IssueEventType,
+		matches[0],
+	)
+	return &id, nil
 }
 
-func (pr PREvent) State() webhooks.SpanState {
+func (pr PREvent) State() (webhooks.SpanState, error) {
+	if pr.Action == nil {
+		return webhooks.UnknownState, fmt.Errorf("event does not contain action")
+	}
 	action := *pr.Action
 
 	if action == "opened" || action == "reopened" {
-		return webhooks.StartState
+		return webhooks.StartState, nil
 	}
 
 	if action == "closed" {
-		return webhooks.EndState
+		return webhooks.EndState, nil
 	}
 
-	return webhooks.IntermediaryState
+	return webhooks.IntermediaryState, nil
+}
+
+func (pr PREvent) IsError() (bool, error) {
+	return false, nil
 }
