@@ -2,7 +2,7 @@ package http
 
 import (
 	"fmt"
-	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
+	"github.com/ImpactInsights/valuestream/eventsources"
 )
 
 type Event struct {
@@ -43,14 +43,14 @@ func (e Event) TraceID() (*string, error) {
 	return &traceID, nil
 }
 
-func (e Event) State() (webhooks.SpanState, error) {
+func (e Event) State() (eventsources.SpanState, error) {
 	switch e.Action {
 	case "start":
-		return webhooks.StartState, nil
+		return eventsources.StartState, nil
 	case "end":
-		return webhooks.EndState, nil
+		return eventsources.EndState, nil
 	}
-	return webhooks.IntermediaryState, nil
+	return eventsources.IntermediaryState, nil
 }
 
 func (e Event) Tags() (map[string]interface{}, error) {

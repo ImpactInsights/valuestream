@@ -3,8 +3,8 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/types"
-	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"strings"
 )
@@ -53,12 +53,12 @@ func (be BuildEvent) branchID() string {
 	return branch
 }
 
-func (be BuildEvent) State() (webhooks.SpanState, error) {
+func (be BuildEvent) State() (eventsources.SpanState, error) {
 	if be.Result == "INPROGRESS" {
-		return webhooks.StartState, nil
+		return eventsources.StartState, nil
 	}
 
-	return webhooks.EndState, nil
+	return eventsources.EndState, nil
 }
 
 // OperationName determines if the event is a `deploy` or a `build`

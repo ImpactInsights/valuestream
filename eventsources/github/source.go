@@ -2,7 +2,7 @@ package github
 
 import (
 	"fmt"
-	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/google/go-github/github"
 	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
@@ -29,7 +29,7 @@ func (s *Source) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, err
 	return github.ValidatePayload(r, secretKey)
 }
 
-func (s *Source) Event(r *http.Request, payload []byte) (webhooks.Event, error) {
+func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var err error
 	event, err := github.ParseWebHook(github.WebHookType(r), payload)
 	if err != nil {
