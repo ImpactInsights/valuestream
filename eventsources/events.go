@@ -1,4 +1,4 @@
-package webhooks
+package eventsources
 
 import (
 	"github.com/opentracing/opentracing-go"
@@ -13,8 +13,6 @@ const (
 	IntermediaryState SpanState = "intermediary"
 	UnknownState      SpanState = "unknown"
 )
-
-const CtxSecretTokenKey = "secret_token"
 
 type Event interface {
 	SpanID() (string, error)

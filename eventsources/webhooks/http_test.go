@@ -3,6 +3,8 @@ package webhooks
 import (
 	"bytes"
 	"context"
+	"github.com/ImpactInsights/valuestream/eventsources"
+	"github.com/ImpactInsights/valuestream/tracers"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/stretchr/testify/assert"
@@ -66,7 +68,7 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 	wh := &Webhook{
 		Traces: traces.NewMemoryUnboundedSpanStore(),
 		Spans:  traces.NewMemoryUnboundedSpanStore(),
-		EventSource: StubEventSource{
+		EventSource: eventsources.StubEventSource{
 			TracerReturn: tracer,
 		},
 	}
@@ -74,7 +76,7 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 	spanID := "span-test-1"
 	traceID := "trace-test-1"
 
-	e := StubEvent{
+	e := eventsources.StubEvent{
 		SpanIDReturn:  spanID,
 		TraceIDReturn: &traceID,
 	}
@@ -88,6 +90,7 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 
 	assert.Nil(t, wh.handleEndEvent(
 		context.Background(),
+		tracer,
 		e,
 	))
 
@@ -104,7 +107,7 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 	wh := &Webhook{
 		Traces: traces.NewMemoryUnboundedSpanStore(),
 		Spans:  traces.NewMemoryUnboundedSpanStore(),
-		EventSource: StubEventSource{
+		EventSource: eventsources.StubEventSource{
 			TracerReturn: tracer,
 		},
 	}
@@ -112,7 +115,7 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 	spanID := "span-test-1"
 	traceID := "trace-test-1"
 
-	e := StubEvent{
+	e := eventsources.StubEvent{
 		OperationNameReturn: "operation_name",
 		SpanIDReturn:        spanID,
 		TraceIDReturn:       &traceID,
@@ -120,6 +123,7 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 
 	assert.Nil(t, wh.handleStartEvent(
 		context.Background(),
+		tracer,
 		e,
 	))
 
@@ -149,13 +153,14 @@ func TestWebhook_Handler_Success(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	wh := &Webhook{
-		EventSource: StubEventSource{
-			_ValidatePayload: func(r *http.Request, secretKey []byte) ([]byte, error) {
+		Tracers: tracers.NewRequestScopedUsingSources(),
+		EventSource: eventsources.StubEventSource{
+			ValidatePayloadFn: func(r *http.Request, secretKey []byte) ([]byte, error) {
 				return nil, nil
 			},
-			_Event: func(*http.Request, []byte) (Event, error) {
-				return StubEvent{
-					StateReturn:      IntermediaryState,
+			EventFn: func(*http.Request, []byte) (eventsources.Event, error) {
+				return eventsources.StubEvent{
+					StateReturn:      eventsources.IntermediaryState,
 					StateReturnError: nil,
 				}, nil
 			},

@@ -7,7 +7,7 @@ import (
 	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
 	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
-	"github.com/ImpactInsights/valuestream/tracer"
+	"github.com/ImpactInsights/valuestream/tracers"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/gorilla/mux"
 	"github.com/lightstep/lightstep-tracer-go"
@@ -95,13 +95,13 @@ func main() {
 		var customHTTPTracerCloser io.Closer
 
 		log.Infof("initializing tracer: jaeger")
-		githubTracer, githubTracerCloser = tracer.InitJaeger("github")
+		githubTracer, githubTracerCloser = tracers.InitJaeger("github")
 		defer githubTracerCloser.Close()
 
-		jenkinsTracer, jenkinsTracerCloser = tracer.InitJaeger("jenkins")
+		jenkinsTracer, jenkinsTracerCloser = tracers.InitJaeger("jenkins")
 		defer jenkinsTracerCloser.Close()
 
-		customHTTPTracer, customHTTPTracerCloser = tracer.InitJaeger("custom_http")
+		customHTTPTracer, customHTTPTracerCloser = tracers.InitJaeger("custom_http")
 		defer customHTTPTracerCloser.Close()
 
 	case "lightstep":
@@ -109,9 +109,9 @@ func main() {
 		log.Infof("initializing tracer: lightstep")
 
 		accessToken := os.Getenv("VS_LIGHTSTEP_ACCESS_TOKEN")
-		githubTracer = tracer.InitLightstep("github", accessToken)
-		jenkinsTracer = tracer.InitLightstep("jenkins", accessToken)
-		customHTTPTracer = tracer.InitLightstep("custom_http", accessToken)
+		githubTracer = tracers.InitLightstep("github", accessToken)
+		jenkinsTracer = tracers.InitLightstep("jenkins", accessToken)
+		customHTTPTracer = tracers.InitLightstep("custom_http", accessToken)
 
 		defer lightstep.Close(ctx, githubTracer)
 		defer lightstep.Close(ctx, jenkinsTracer)
@@ -119,9 +119,9 @@ func main() {
 
 	default:
 		log.Infof("initializing tracer: logging")
-		githubTracer = tracer.LoggingTracer{}
-		jenkinsTracer = tracer.LoggingTracer{}
-		customHTTPTracer = tracer.LoggingTracer{}
+		githubTracer = tracers.LoggingTracer{}
+		jenkinsTracer = tracers.LoggingTracer{}
+		customHTTPTracer = tracers.LoggingTracer{}
 	}
 
 	ts, err := traces.NewBufferedSpanStore(1000)
@@ -143,6 +143,7 @@ func main() {
 
 	jenkins, err := webhooks.New(
 		jenkinsSource,
+		tracers.NewRequestScopedUsingSources(),
 		nil,
 		ts,
 		jenkinsSpans,
@@ -170,6 +171,7 @@ func main() {
 
 	github, err := webhooks.New(
 		githubSource,
+		tracers.NewRequestScopedUsingSources(),
 		githubSecretToken,
 		ts,
 		githubSpans,
@@ -191,6 +193,7 @@ func main() {
 
 	customHTTPWebhook, err := webhooks.New(
 		customHTTP,
+		tracers.NewRequestScopedUsingSources(),
 		nil,
 		ts,
 		customHTTPSpans,

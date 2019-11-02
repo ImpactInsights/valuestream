@@ -2,7 +2,7 @@ package jenkins
 
 import (
 	"encoding/json"
-	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +20,7 @@ func (s *Source) Tracer() opentracing.Tracer {
 	return s.tracer
 }
 
-func (s *Source) Event(r *http.Request, payload []byte) (webhooks.Event, error) {
+func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var be BuildEvent
 	err := json.Unmarshal(payload, &be)
 	return be, err

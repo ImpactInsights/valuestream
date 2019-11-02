@@ -1,4 +1,4 @@
-package webhooks
+package eventsources
 
 import (
 	"github.com/opentracing/opentracing-go"
@@ -6,22 +6,22 @@ import (
 )
 
 type StubEventSource struct {
-	_ValidatePayload func(r *http.Request, secretKey []byte) ([]byte, error)
-	_Name            string
-	_Event           func(*http.Request, []byte) (Event, error)
-	TracerReturn     opentracing.Tracer
+	ValidatePayloadFn func(r *http.Request, secretKey []byte) ([]byte, error)
+	NameReturn        string
+	EventFn           func(*http.Request, []byte) (Event, error)
+	TracerReturn      opentracing.Tracer
 }
 
 func (s StubEventSource) Name() string {
-	return s._Name
+	return s.NameReturn
 }
 
 func (s StubEventSource) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, error) {
-	return s._ValidatePayload(r, secretKey)
+	return s.ValidatePayloadFn(r, secretKey)
 }
 
 func (s StubEventSource) Event(r *http.Request, payload []byte) (Event, error) {
-	return s._Event(r, payload)
+	return s.EventFn(r, payload)
 }
 
 func (s StubEventSource) Tracer() opentracing.Tracer {

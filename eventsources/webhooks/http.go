@@ -3,9 +3,11 @@ package webhooks
 import (
 	"context"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 )
 
@@ -13,9 +15,21 @@ const (
 	SignatureHeader = "X-VS-Signature"
 )
 
-func New(es EventSource, sk []byte, ts traces.SpanStore, spans traces.SpanStore) (*Webhook, error) {
+type Tracers interface {
+	RequestScoped(r *http.Request, es eventsources.EventSource) (opentracing.Tracer, io.Closer, error)
+}
+
+func New(
+	es eventsources.EventSource,
+	tracers Tracers,
+	sk []byte,
+	ts traces.SpanStore,
+	spans traces.SpanStore,
+) (*Webhook, error) {
+
 	return &Webhook{
 		EventSource: es,
+		Tracers:     tracers,
 		SecretKey:   sk,
 		Traces:      ts,
 		Spans:       spans,
@@ -23,7 +37,8 @@ func New(es EventSource, sk []byte, ts traces.SpanStore, spans traces.SpanStore)
 }
 
 type Webhook struct {
-	EventSource EventSource
+	EventSource eventsources.EventSource
+	Tracers     Tracers
 	SecretKey   []byte
 	Traces      traces.SpanStore
 	Spans       traces.SpanStore
@@ -44,7 +59,7 @@ func (wh Webhook) secretKey(r *http.Request) []byte {
 func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	var payload []byte
 	var err error
-	var e Event
+	var e eventsources.Event
 
 	secretKey := wh.secretKey(r)
 
@@ -68,7 +83,18 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := wh.handleEvent(r.Context(), e); err != nil {
+	tracer, closer, err := wh.Tracers.RequestScoped(r, wh.EventSource)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error":   err.Error(),
+			"payload": payload,
+		}).Errorf("error getting tracer from request")
+		http.Error(w, "error", http.StatusBadRequest)
+		return
+	}
+	defer closer.Close()
+
+	if err := wh.handleEvent(r.Context(), tracer, e); err != nil {
 		log.WithFields(log.Fields{
 			"error":   err.Error(),
 			"payload": payload,
@@ -81,7 +107,7 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("success"))
 }
 
-func (wh *Webhook) handleStartEvent(ctx context.Context, e Event) error {
+func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
 	// check to see if this event has a parent span
 	parentID, err := e.ParentSpanID()
 	if err != nil {
@@ -92,7 +118,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, e Event) error {
 
 	// if it does than make sure to establish the ChildOf relationship
 	if parentID != nil {
-		parentSpan, err := wh.Traces.Get(ctx, wh.EventSource.Tracer(), *parentID)
+		parentSpan, err := wh.Traces.Get(ctx, tracer, *parentID)
 		if err != nil {
 			return err
 		}
@@ -103,7 +129,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, e Event) error {
 	}
 
 	// Actually start the span
-	span := wh.EventSource.Tracer().StartSpan(
+	span := tracer.StartSpan(
 		e.OperationName(),
 		opts...,
 	)
@@ -141,13 +167,13 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, e Event) error {
 	return nil
 }
 
-func (wh *Webhook) handleEndEvent(ctx context.Context, e Event) error {
+func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
 	spanID, err := e.SpanID()
 	if err != nil {
 		return err
 	}
 
-	span, err := wh.Spans.Get(ctx, wh.EventSource.Tracer(), spanID)
+	span, err := wh.Spans.Get(ctx, tracer, spanID)
 	if err != nil {
 		return err
 	}
@@ -186,7 +212,7 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, e Event) error {
 	return nil
 }
 
-func (wh *Webhook) handleEvent(ctx context.Context, e Event) error {
+func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
 	state, err := e.State()
 
 	if err != nil {
@@ -194,10 +220,10 @@ func (wh *Webhook) handleEvent(ctx context.Context, e Event) error {
 	}
 
 	switch state {
-	case StartState:
-		return wh.handleStartEvent(ctx, e)
-	case EndState:
-		return wh.handleEndEvent(ctx, e)
+	case eventsources.StartState:
+		return wh.handleStartEvent(ctx, tracer, e)
+	case eventsources.EndState:
+		return wh.handleEndEvent(ctx, tracer, e)
 	}
 
 	return nil

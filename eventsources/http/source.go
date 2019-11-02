@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
@@ -34,7 +35,7 @@ func (es *EventSource) ValidatePayload(r *http.Request, secretKey []byte) ([]byt
 	return body, nil
 }
 
-func (es *EventSource) Event(r *http.Request, payload []byte) (webhooks.Event, error) {
+func (es *EventSource) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var e Event
 	err := json.Unmarshal(payload, &e)
 	return e, err

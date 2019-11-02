@@ -2,8 +2,8 @@ package github
 
 import (
 	"fmt"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/types"
-	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
 	"regexp"
@@ -30,22 +30,22 @@ func (ie IssuesEvent) SpanID() (string, error) {
 	), nil
 }
 
-func (ie IssuesEvent) State() (webhooks.SpanState, error) {
+func (ie IssuesEvent) State() (eventsources.SpanState, error) {
 	if ie.Action == nil {
-		return webhooks.UnknownState, fmt.Errorf("event does not contain action")
+		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
 
 	action := *ie.Action
 
 	if action == "opened" || action == "reopened" {
-		return webhooks.StartState, nil
+		return eventsources.StartState, nil
 	}
 
 	if action == "closed" {
-		return webhooks.EndState, nil
+		return eventsources.EndState, nil
 	}
 
-	return webhooks.IntermediaryState, nil
+	return eventsources.IntermediaryState, nil
 }
 
 func (ie IssuesEvent) IsError() (bool, error) {
@@ -187,21 +187,21 @@ func (pr PREvent) ParentSpanID() (*string, error) {
 	return &id, nil
 }
 
-func (pr PREvent) State() (webhooks.SpanState, error) {
+func (pr PREvent) State() (eventsources.SpanState, error) {
 	if pr.Action == nil {
-		return webhooks.UnknownState, fmt.Errorf("event does not contain action")
+		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
 	action := *pr.Action
 
 	if action == "opened" || action == "reopened" {
-		return webhooks.StartState, nil
+		return eventsources.StartState, nil
 	}
 
 	if action == "closed" {
-		return webhooks.EndState, nil
+		return eventsources.EndState, nil
 	}
 
-	return webhooks.IntermediaryState, nil
+	return eventsources.IntermediaryState, nil
 }
 
 func (pr PREvent) IsError() (bool, error) {
