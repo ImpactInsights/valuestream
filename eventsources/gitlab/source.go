@@ -41,6 +41,8 @@ func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, err
 		return IssueEvent{event}, nil
 	case *gitlab.MergeEvent:
 		return MergeEvent{event}, nil
+	case *gitlab.PipelineEvent:
+		return PipelineEvent{event}, nil
 	default:
 		err = fmt.Errorf("event type not supported, %+v", event)
 	}

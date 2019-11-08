@@ -1,0 +1,106 @@
+{
+  "object_kind": "pipeline",
+  "object_attributes": {
+    "id": 94725643,
+    "ref": "feature/test",
+    "tag": false,
+    "sha": "8ee0be5c4b78ed48d7ee1a5186f560673a550c5e",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "source": "web",
+    "status": "success",
+    "detailed_status": "passed",
+    "stages": [
+      "build"
+    ],
+    "created_at": "2019-11-08 20:18:51 UTC",
+    "finished_at": "2019-11-08 20:32:48 UTC",
+    "duration": 62,
+    "variables": [
+
+    ]
+  },
+  "merge_request": null,
+  "user": {
+    "name": "Daniel Mican",
+    "username": "dm03514",
+    "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+  },
+  "project": {
+    "id": 15119184,
+    "name": "test-project",
+    "description": "",
+    "web_url": "https://gitlab.com/dm03514/test-project",
+    "avatar_url": null,
+    "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+    "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+    "namespace": "Daniel Mican",
+    "visibility_level": 0,
+    "path_with_namespace": "dm03514/test-project",
+    "default_branch": "master",
+    "ci_config_path": null
+  },
+  "commit": {
+    "id": "8ee0be5c4b78ed48d7ee1a5186f560673a550c5e",
+    "message": "CI build\n",
+    "timestamp": "2019-11-08T20:15:33Z",
+    "url": "https://gitlab.com/dm03514/test-project/commit/8ee0be5c4b78ed48d7ee1a5186f560673a550c5e",
+    "author": {
+      "name": "Daniel Mican",
+      "email": "dm03514@gmail.com"
+    }
+  },
+  "builds": [
+    {
+      "id": 346044846,
+      "stage": "build",
+      "name": "install_dependencies",
+      "status": "canceled",
+      "created_at": "2019-11-08 20:18:51 UTC",
+      "started_at": "2019-11-08 20:18:53 UTC",
+      "finished_at": "2019-11-08 20:19:40 UTC",
+      "when": "on_success",
+      "manual": false,
+      "user": {
+        "name": "Daniel Mican",
+        "username": "dm03514",
+        "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+      },
+      "runner": {
+        "id": 380986,
+        "description": "shared-runners-manager-5.gitlab.com",
+        "active": true,
+        "is_shared": true
+      },
+      "artifacts_file": {
+        "filename": null,
+        "size": null
+      }
+    },
+    {
+      "id": 346051165,
+      "stage": "build",
+      "name": "install_dependencies",
+      "status": "success",
+      "created_at": "2019-11-08 20:31:44 UTC",
+      "started_at": "2019-11-08 20:31:45 UTC",
+      "finished_at": "2019-11-08 20:32:48 UTC",
+      "when": "on_success",
+      "manual": false,
+      "user": {
+        "name": "Daniel Mican",
+        "username": "dm03514",
+        "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+      },
+      "runner": {
+        "id": 380986,
+        "description": "shared-runners-manager-5.gitlab.com",
+        "active": true,
+        "is_shared": true
+      },
+      "artifacts_file": {
+        "filename": null,
+        "size": null
+      }
+    }
+  ]
+}

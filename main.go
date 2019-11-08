@@ -137,13 +137,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go ts.Monitor(ctx, time.Second*60, "traces")
+	// go ts.Monitor(ctx, time.Second*60, "traces")
 
 	jenkinsSpans, err := traces.NewBufferedSpanStore(500)
 	if err != nil {
 		panic(err)
 	}
-	go jenkinsSpans.Monitor(ctx, time.Second*60, "jenkins")
+	// go jenkinsSpans.Monitor(ctx, time.Second*60, "jenkins")
 
 	jenkinsSource, err := jenkins.NewSource(jenkinsTracer)
 	if err != nil {
@@ -165,7 +165,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go githubSpans.Monitor(ctx, time.Second*20, "github")
+	// go githubSpans.Monitor(ctx, time.Second*20, "github")
 
 	var githubSecretToken []byte
 
@@ -198,7 +198,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go customHTTPSpans.Monitor(ctx, time.Second*20, customHTTP.Name())
+	// go customHTTPSpans.Monitor(ctx, time.Second*20, customHTTP.Name())
 
 	customHTTPWebhook, err := webhooks.New(
 		customHTTP,
@@ -213,7 +213,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	go gitlabSpans.Monitor(ctx, time.Second*20, gitlab.Name())
+	// go gitlabSpans.Monitor(ctx, time.Second*20, gitlab.Name())
 
 	gitlabWebhook, err := webhooks.New(
 		gitlab,
@@ -298,7 +298,7 @@ func waitForShutdown(srv *http.Server) {
 	<-interruptChan
 
 	// Create a deadline to wait for.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	srv.Shutdown(ctx)
 

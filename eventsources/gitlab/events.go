@@ -185,3 +185,95 @@ func (me MergeEvent) Tags() (map[string]interface{}, error) {
 
 	return tags, nil
 }
+
+type PipelineEvent struct {
+	*gitlab.PipelineEvent
+}
+
+func (pe PipelineEvent) OperationName() string {
+	return fmt.Sprintf("%s-%s",
+		types.BuildEventType,
+		pe.ObjectAttributes.Status,
+	)
+}
+
+func (pe PipelineEvent) SpanID() (string, error) {
+	return strings.Join([]string{
+		types.BuildEventType,
+		service,
+		strconv.Itoa(pe.Project.ID),
+		strconv.Itoa(pe.ObjectAttributes.ID),
+	}, "-"), nil
+}
+
+func (pe PipelineEvent) TraceID() (*string, error) {
+	// start event goes in the TraceID()
+	return nil, nil
+}
+
+func (pe PipelineEvent) State() (eventsources.SpanState, error) {
+	state := pe.ObjectAttributes.Status
+
+	if state == "" {
+		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
+	}
+
+	log.Debugf("event state: %q", state)
+
+	if state == "pending" {
+		return eventsources.StartState, nil
+	}
+
+	if state == "running" {
+		return eventsources.TransitionState, nil
+	}
+
+	if state == "canceled" || state == "success" {
+		return eventsources.EndState, nil
+	}
+
+	return eventsources.IntermediaryState, nil
+}
+
+func (pe PipelineEvent) IsError() (bool, error) {
+	isErr := false
+
+	status := pe.ObjectAttributes.Status
+
+	if status != "success" && status != "running" {
+		isErr = true
+	}
+
+	return isErr, nil
+}
+
+// ParentSpanID inspects the pipeline payload for the causing event:
+// - Pull Request
+// - Issue
+func (pe PipelineEvent) ParentSpanID() (*string, error) {
+	return nil, nil
+}
+
+func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
+	tags := make(map[string]interface{})
+	tags["service"] = service
+	tags["event.type"] = "pipeline"
+
+	tags["project.id"] = pe.Project.ID
+	tags["project.name"] = pe.Project.Name
+	tags["project.namespace"] = pe.Project.Namespace
+	tags["project.path_with_namespace"] = pe.Project.PathWithNamespace
+	tags["project.url"] = pe.Project.WebURL
+	tags["project.visibility"] = pe.Project.Visibility
+
+	tags["user.name"] = pe.User.Name
+	tags["user.username"] = pe.User.Username
+
+	tags["build.id"] = pe.ObjectAttributes.ID
+	tags["build.ref"] = pe.ObjectAttributes.Ref
+	tags["build.tag"] = pe.ObjectAttributes.Tag
+	tags["build.sha"] = pe.ObjectAttributes.SHA
+	tags["build.before_sha"] = pe.ObjectAttributes.BeforeSHA
+
+	return tags, nil
+}

@@ -224,6 +224,11 @@ func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e
 		return wh.handleStartEvent(ctx, tracer, e)
 	case eventsources.EndState:
 		return wh.handleEndEvent(ctx, tracer, e)
+	case eventsources.TransitionState:
+		if err := wh.handleEndEvent(ctx, tracer, e); err != nil {
+			return err
+		}
+		return wh.handleStartEvent(ctx, tracer, e)
 	}
 
 	return nil
