@@ -4,11 +4,13 @@ import (
 	"context"
 	"flag"
 	"github.com/ImpactInsights/valuestream/eventsources/github"
+	gitlab2 "github.com/ImpactInsights/valuestream/eventsources/gitlab"
 	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
 	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/tracers"
 	"github.com/ImpactInsights/valuestream/traces"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/opentracing/opentracing-go"
@@ -87,12 +89,14 @@ func main() {
 	var githubTracer opentracing.Tracer
 	var jenkinsTracer opentracing.Tracer
 	var customHTTPTracer opentracing.Tracer
+	var gitlabTracer opentracing.Tracer
 
 	switch *tracerImplName {
 	case "jaeger":
 		var githubTracerCloser io.Closer
 		var jenkinsTracerCloser io.Closer
 		var customHTTPTracerCloser io.Closer
+		var gitlabTracerCloser io.Closer
 
 		log.Infof("initializing tracer: jaeger")
 		githubTracer, githubTracerCloser = tracers.InitJaeger("github")
@@ -104,24 +108,29 @@ func main() {
 		customHTTPTracer, customHTTPTracerCloser = tracers.InitJaeger("custom_http")
 		defer customHTTPTracerCloser.Close()
 
-	case "lightstep":
+		gitlabTracer, gitlabTracerCloser = tracers.InitJaeger("gitlab")
+		defer gitlabTracerCloser.Close()
 
+	case "lightstep":
 		log.Infof("initializing tracer: lightstep")
 
 		accessToken := os.Getenv("VS_LIGHTSTEP_ACCESS_TOKEN")
 		githubTracer = tracers.InitLightstep("github", accessToken)
 		jenkinsTracer = tracers.InitLightstep("jenkins", accessToken)
 		customHTTPTracer = tracers.InitLightstep("custom_http", accessToken)
+		gitlabTracer = tracers.InitLightstep("gitlab", accessToken)
 
 		defer lightstep.Close(ctx, githubTracer)
 		defer lightstep.Close(ctx, jenkinsTracer)
 		defer lightstep.Close(ctx, customHTTPTracer)
+		defer lightstep.Close(ctx, gitlabTracer)
 
 	default:
 		log.Infof("initializing tracer: logging")
 		githubTracer = tracers.LoggingTracer{}
 		jenkinsTracer = tracers.LoggingTracer{}
 		customHTTPTracer = tracers.LoggingTracer{}
+		gitlabTracer = tracers.LoggingTracer{}
 	}
 
 	ts, err := traces.NewBufferedSpanStore(1000)
@@ -199,6 +208,21 @@ func main() {
 		customHTTPSpans,
 	)
 
+	gitlab, err := gitlab2.NewSource(gitlabTracer)
+	gitlabSpans, err := traces.NewBufferedSpanStore(500)
+	if err != nil {
+		panic(err)
+	}
+	go gitlabSpans.Monitor(ctx, time.Second*20, gitlab.Name())
+
+	gitlabWebhook, err := webhooks.New(
+		gitlab,
+		tracers.NewRequestScopedUsingSources(),
+		nil,
+		ts,
+		gitlabSpans,
+	)
+
 	r := mux.NewRouter()
 
 	r.Handle("/jenkins/",
@@ -234,10 +258,23 @@ func main() {
 		),
 	)
 
+	r.Handle("/gitlab/",
+		promhttp.InstrumentHandlerDuration(
+			duration.MustCurryWith(prometheus.Labels{"handler": "gitlab"}),
+			promhttp.InstrumentHandlerCounter(counter,
+				promhttp.InstrumentHandlerResponseSize(responseSize,
+					http.HandlerFunc(gitlabWebhook.Handler),
+				),
+			),
+		),
+	)
+
 	r.Handle("/metrics", promhttp.Handler())
 
+	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
+
 	srv := &http.Server{
-		Handler:      r,
+		Handler:      loggedRouter,
 		Addr:         *addr,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
