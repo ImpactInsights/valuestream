@@ -1,0 +1,44 @@
+{
+  "object_kind": "build",
+  "ref": "feature/test",
+  "tag": false,
+  "before_sha": "0000000000000000000000000000000000000000",
+  "sha": "8ee0be5c4b78ed48d7ee1a5186f560673a550c5e",
+  "build_id": 346044846,
+  "build_name": "install_dependencies",
+  "build_stage": "build",
+  "build_status": "pending",
+  "build_started_at": null,
+  "build_finished_at": null,
+  "build_duration": null,
+  "build_allow_failure": false,
+  "build_failure_reason": "unknown_failure",
+  "project_id": 15119184,
+  "project_name": "Daniel Mican / test-project",
+  "user": {
+    "id": 4890303,
+    "name": "Daniel Mican",
+    "email": "dm03514@gmail.com"
+  },
+  "commit": {
+    "id": 94725643,
+    "sha": "8ee0be5c4b78ed48d7ee1a5186f560673a550c5e",
+    "message": "CI build\n",
+    "author_name": "Daniel Mican",
+    "author_email": "dm03514@gmail.com",
+    "author_url": "https://gitlab.com/dm03514",
+    "status": "pending",
+    "duration": null,
+    "started_at": null,
+    "finished_at": null
+  },
+  "repository": {
+    "name": "test-project",
+    "url": "git@gitlab.com:dm03514/test-project.git",
+    "description": "",
+    "homepage": "https://gitlab.com/dm03514/test-project",
+    "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+    "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+    "visibility_level": 0
+  }
+}
