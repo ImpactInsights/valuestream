@@ -208,7 +208,14 @@ func (pe PipelineEvent) SpanID() (string, error) {
 
 func (pe PipelineEvent) TraceID() (*string, error) {
 	// start event goes in the TraceID()
-	return nil, nil
+	id := strings.Join([]string{
+		types.BuildEventType,
+		service,
+		pe.Project.Name,
+		pe.ObjectAttributes.Ref,
+		strconv.Itoa(pe.ObjectAttributes.ID),
+	}, "-")
+	return &id, nil
 }
 
 func (pe PipelineEvent) State() (eventsources.SpanState, error) {
@@ -274,6 +281,125 @@ func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
 	tags["build.tag"] = pe.ObjectAttributes.Tag
 	tags["build.sha"] = pe.ObjectAttributes.SHA
 	tags["build.before_sha"] = pe.ObjectAttributes.BeforeSHA
+
+	tID, _ := pe.TraceID()
+	tags["vstrace.id"] = *tID
+
+	sID, _ := pe.SpanID()
+	tags["vstrace.span.id"] = sID
+
+	return tags, nil
+}
+
+type JobEvent struct {
+	*gitlab.JobEvent
+}
+
+func (je JobEvent) OperationName() string {
+	return strings.Join([]string{
+		types.BuildEventType,
+		je.BuildStage,
+		je.BuildStatus,
+	}, "-")
+}
+
+func (je JobEvent) SpanID() (string, error) {
+	return strings.Join([]string{
+		types.BuildEventType,
+		"gitlab",
+		strconv.Itoa(je.ProjectID),
+		strconv.Itoa(je.BuildID),
+	}, "-"), nil
+}
+
+// State identifies the current state of the build, valid states are:
+// - pending
+// - created
+// - running
+// - canceled
+// - success
+func (je JobEvent) State() (eventsources.SpanState, error) {
+	if je.BuildStatus == "" {
+		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
+	}
+
+	state := je.BuildStatus
+
+	log.Debugf("event state: %q", state)
+
+	if state == "pending" {
+		return eventsources.StartState, nil
+	}
+
+	if state == "running" {
+		return eventsources.TransitionState, nil
+	}
+
+	if state == "canceled" || state == "success" {
+		return eventsources.EndState, nil
+	}
+
+	return eventsources.IntermediaryState, nil
+}
+
+func (je JobEvent) IsError() (bool, error) {
+	isErr := false
+
+	status := je.BuildStatus
+
+	if status != "success" && status != "running" {
+		isErr = true
+	}
+
+	return isErr, nil
+}
+
+func (je JobEvent) ParentSpanID() (*string, error) {
+	id := strings.Join([]string{
+		types.BuildEventType,
+		service,
+		je.Repository.Name,
+		je.Ref,
+		strconv.Itoa(je.Commit.ID),
+	}, "-")
+
+	return &id, nil
+}
+
+func (je JobEvent) TraceID() (*string, error) {
+	return nil, nil
+}
+
+func (je JobEvent) Tags() (map[string]interface{}, error) {
+	tags := make(map[string]interface{})
+	tags["service"] = service
+	tags["event.type"] = "build"
+	tags["build.kind"] = je.ObjectKind
+	tags["build.ref"] = je.Ref
+	tags["build.tag"] = je.Tag
+	tags["build.je.ore_sha"] = je.BeforeSHA
+	tags["build.sha"] = je.SHA
+	tags["build.id"] = je.BuildID
+	tags["build.name"] = je.BuildName
+	tags["build.stage"] = je.BuildStage
+	tags["build.status"] = je.BuildStatus
+	tags["build.allow_failure"] = je.BuildAllowFailure
+	tags["build.project.id"] = je.ProjectID
+	tags["build.project.name"] = je.ProjectName
+
+	tags["user.id"] = je.User.ID
+	tags["user.name"] = je.User.Name
+
+	tags["scm.commit.id"] = je.Commit.ID
+	tags["scm.commit.sha"] = je.Commit.SHA
+	tags["scm.commit.author.name"] = je.Commit.AuthorName
+	tags["scm.commit.status"] = je.Commit.Status
+
+	sID, _ := je.SpanID()
+	tags["vstrace.span.id"] = sID
+
+	parentID, _ := je.ParentSpanID()
+	tags["vstrace.parent.id"] = *parentID
 
 	return tags, nil
 }

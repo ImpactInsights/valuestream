@@ -7,6 +7,7 @@ import (
 	"github.com/xanzy/go-gitlab"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 )
 
 type Source struct {
@@ -43,8 +44,10 @@ func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, err
 		return MergeEvent{event}, nil
 	case *gitlab.PipelineEvent:
 		return PipelineEvent{event}, nil
+	case *gitlab.JobEvent:
+		return JobEvent{event}, nil
 	default:
-		err = fmt.Errorf("event type not supported, %+v", event)
+		err = fmt.Errorf("event type not supported, %+v", reflect.TypeOf(event))
 	}
 	return nil, err
 }
