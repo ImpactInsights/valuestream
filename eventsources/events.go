@@ -11,6 +11,7 @@ const (
 	StartState        SpanState = "start"
 	EndState          SpanState = "end"
 	IntermediaryState SpanState = "intermediary"
+	TransitionState   SpanState = "transition"
 	UnknownState      SpanState = "unknown"
 )
 
