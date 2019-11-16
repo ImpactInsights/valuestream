@@ -23,7 +23,6 @@ func New(
 	es eventsources.EventSource,
 	tracers Tracers,
 	sk []byte,
-	ts traces.SpanStore,
 	spans traces.SpanStore,
 ) (*Webhook, error) {
 
@@ -31,7 +30,6 @@ func New(
 		EventSource: es,
 		Tracers:     tracers,
 		SecretKey:   sk,
-		Traces:      ts,
 		Spans:       spans,
 	}, nil
 }
@@ -40,7 +38,6 @@ type Webhook struct {
 	EventSource eventsources.EventSource
 	Tracers     Tracers
 	SecretKey   []byte
-	Traces      traces.SpanStore
 	Spans       traces.SpanStore
 }
 
@@ -118,7 +115,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 
 	// if it does than make sure to establish the ChildOf relationship
 	if parentID != nil {
-		entry, err := wh.Traces.Get(ctx, tracer, *parentID)
+		entry, err := wh.Spans.Get(ctx, tracer, *parentID)
 		if err != nil {
 			return err
 		}
@@ -142,21 +139,6 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 
 	for k, v := range tags {
 		span.SetTag(k, v)
-	}
-
-	// if this functions as a trace than set the trace
-	traceID, err := e.TraceID()
-	if err != nil {
-		return err
-	}
-
-	if traceID != nil {
-		// if span set has errored do not continue?
-		if err := wh.Traces.Set(ctx, *traceID, traces.StoreEntry{
-			Span: span,
-		}); err != nil {
-			return err
-		}
 	}
 
 	// else we need to just set the span for future events
@@ -185,7 +167,7 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 
 	if entry == nil {
 		return traces.SpanMissingError{
-			Err: fmt.Errorf("span not found for span: %q", spanID),
+			Err: fmt.Errorf("span not found for SpanID: %q", spanID),
 		}
 	}
 
@@ -200,18 +182,6 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 
 	if err := wh.Spans.Delete(ctx, spanID); err != nil {
 		return err
-	}
-
-	// DELETE the trace associated with this span as well
-	traceID, err := e.TraceID()
-	if err != nil {
-		return err
-	}
-
-	if traceID != nil {
-		if err := wh.Traces.Delete(ctx, *traceID); err != nil {
-			return err
-		}
 	}
 
 	return nil

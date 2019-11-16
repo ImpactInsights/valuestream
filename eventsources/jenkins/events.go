@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/types"
-	"github.com/ImpactInsights/valuestream/traces"
+	log "github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 )
 
@@ -42,15 +43,27 @@ type BuildEvent struct {
 }
 
 func (be BuildEvent) SpanID() (string, error) {
-	return be.BuildURL, nil
+	id := strings.Join([]string{
+		eventsources.TracePrefix,
+		sourceName,
+		types.BuildEventType,
+		be.JobName,
+		strconv.Itoa(be.Number),
+	}, "-")
+	log.Debugf("jenkins.BuildEvent.SpanID(): %q", id)
+
+	return id, nil
 }
 
-func (be BuildEvent) branchID() string {
+func (be BuildEvent) branchID() *string {
+	if be.ScmInfo.Branch == nil {
+		return nil
+	}
 	branch := *be.ScmInfo.Branch
 	if strings.HasPrefix(branch, "origin/") {
-		return strings.TrimPrefix(branch, "origin/")
+		branch = strings.TrimPrefix(branch, "origin/")
 	}
-	return branch
+	return &branch
 }
 
 func (be BuildEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
@@ -84,26 +97,16 @@ func (be BuildEvent) IsError() (bool, error) {
 // Then will check if the build is part of SCM
 func (be BuildEvent) ParentSpanID() (*string, error) {
 	id, found := be.Parameters["vstrace-trace-id"]
-	prefixed := traces.PrefixWith(types.IssueEventType, id)
 	if found {
-		return &prefixed, nil
+		return &id, nil
 	}
 
-	branchID := traces.PrefixSCM(be.branchID())
-
-	if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
-		return &branchID, nil
-	}
-	return nil, nil
+	return be.branchID(), nil
 }
 
 func (be BuildEvent) String() (string, error) {
 	b, err := json.Marshal(be)
 	return string(b), err
-}
-
-func (be BuildEvent) TraceID() (*string, error) {
-	return nil, nil
 }
 
 func (be BuildEvent) Tags() (map[string]interface{}, error) {

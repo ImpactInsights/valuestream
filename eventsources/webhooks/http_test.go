@@ -66,8 +66,7 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 	tracer := mocktracer.New()
 
 	wh := &Webhook{
-		Traces: traces.NewMemoryUnboundedSpanStore(),
-		Spans:  traces.NewMemoryUnboundedSpanStore(),
+		Spans: traces.NewMemoryUnboundedSpanStore(),
 		EventSource: eventsources.StubEventSource{
 			TracerReturn: tracer,
 		},
@@ -94,9 +93,6 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 		e,
 	))
 
-	numTraces, _ := wh.Traces.Count()
-	assert.Equal(t, 0, numTraces)
-
 	numSpans, _ := wh.Spans.Count()
 	assert.Equal(t, 0, numSpans)
 }
@@ -105,8 +101,7 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 	tracer := mocktracer.New()
 
 	wh := &Webhook{
-		Traces: traces.NewMemoryUnboundedSpanStore(),
-		Spans:  traces.NewMemoryUnboundedSpanStore(),
+		Spans: traces.NewMemoryUnboundedSpanStore(),
 		EventSource: eventsources.StubEventSource{
 			TracerReturn: tracer,
 		},
@@ -127,17 +122,10 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 		e,
 	))
 
-	numTraces, _ := wh.Traces.Count()
-	assert.Equal(t, 1, numTraces)
-
 	numSpans, _ := wh.Spans.Count()
 	assert.Equal(t, 1, numSpans)
 
 	entry, err := wh.Spans.Get(context.Background(), tracer, spanID)
-	assert.NoError(t, err)
-	assert.Equal(t, e.OperationName(), entry.Span.(*mocktracer.MockSpan).OperationName)
-
-	entry, err = wh.Traces.Get(context.Background(), tracer, traceID)
 	assert.NoError(t, err)
 	assert.Equal(t, e.OperationName(), entry.Span.(*mocktracer.MockSpan).OperationName)
 }

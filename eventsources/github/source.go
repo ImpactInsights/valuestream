@@ -9,12 +9,16 @@ import (
 	"net/http"
 )
 
+const (
+	sourceName string = "github"
+)
+
 type Source struct {
 	tracer opentracing.Tracer
 }
 
 func (s Source) Name() string {
-	return "github"
+	return sourceName
 }
 
 func (s *Source) Tracer() opentracing.Tracer {

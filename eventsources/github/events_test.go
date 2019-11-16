@@ -7,7 +7,7 @@ import (
 )
 
 func TestPullRequestEvent_ParentSpanID(t *testing.T) {
-	branchName := "feature/vstrace-github-valuestream-1/hi"
+	branchName := "feature/vstrace-github-pull_request-valuestream-1/hi"
 
 	traceIDTests := []struct {
 		name     string
@@ -25,12 +25,14 @@ func TestPullRequestEvent_ParentSpanID(t *testing.T) {
 					},
 				},
 			},
-			expected: "ISSUE-vstrace-github-valuestream-1",
+			expected: "vstrace-github-pull_request-valuestream-1",
 		},
 	}
 	for _, tt := range traceIDTests {
 		t.Run(tt.name, func(t *testing.T) {
-			match, _ := tt.pr.ParentSpanID()
+			match, err := tt.pr.ParentSpanID()
+			assert.NoError(t, err)
+			assert.NotNil(t, match)
 			assert.Equal(t, tt.expected, *match)
 		})
 	}

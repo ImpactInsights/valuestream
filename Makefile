@@ -17,6 +17,7 @@ start-valuestream-local:
 	JAEGER_REPORTER_LOG_SPANS=1 \
 	JAEGER_SAMPLER_TYPE=const \
 	JAEGER_SAMPLER_PARAM=1 \
+	VS_LOG_LEVEL=debug \
 	go run main.go -addr=:5000 -tracer=jaeger
 
 test-service-github-jenkins:
