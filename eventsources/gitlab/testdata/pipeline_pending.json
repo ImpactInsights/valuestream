@@ -1,0 +1,97 @@
+{
+  "object_kind": "pipeline",
+  "object_attributes": {
+    "id": 96413343,
+    "ref": "feature/test",
+    "tag": false,
+    "sha": "304839c04c12d78a94b9b521c237c83ec84e826d",
+    "before_sha": "0000000000000000000000000000000000000000",
+    "source": "web",
+    "status": "pending",
+    "detailed_status": "pending",
+    "stages": [
+      "build",
+      "test"
+    ],
+    "created_at": "2019-11-16 19:05:07 UTC",
+    "finished_at": null,
+    "duration": null,
+    "variables": [
+
+    ]
+  },
+  "merge_request": null,
+  "user": {
+    "name": "Daniel Mican",
+    "username": "dm03514",
+    "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+  },
+  "project": {
+    "id": 15119184,
+    "name": "test-project",
+    "description": "",
+    "web_url": "https://gitlab.com/dm03514/test-project",
+    "avatar_url": null,
+    "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+    "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+    "namespace": "Daniel Mican",
+    "visibility_level": 0,
+    "path_with_namespace": "dm03514/test-project",
+    "default_branch": "master",
+    "ci_config_path": null
+  },
+  "commit": {
+    "id": "304839c04c12d78a94b9b521c237c83ec84e826d",
+    "message": "another build\n",
+    "timestamp": "2019-11-09T17:34:18Z",
+    "url": "https://gitlab.com/dm03514/test-project/commit/304839c04c12d78a94b9b521c237c83ec84e826d",
+    "author": {
+      "name": "Daniel Mican",
+      "email": "dm03514@gmail.com"
+    }
+  },
+  "builds": [
+    {
+      "id": 352803367,
+      "stage": "test",
+      "name": "test-unit",
+      "status": "created",
+      "created_at": "2019-11-16 19:05:07 UTC",
+      "started_at": null,
+      "finished_at": null,
+      "when": "on_success",
+      "manual": false,
+      "user": {
+        "name": "Daniel Mican",
+        "username": "dm03514",
+        "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+      },
+      "runner": null,
+      "artifacts_file": {
+        "filename": null,
+        "size": null
+      }
+    },
+    {
+      "id": 352803365,
+      "stage": "build",
+      "name": "install_dependencies",
+      "status": "pending",
+      "created_at": "2019-11-16 19:05:07 UTC",
+      "started_at": null,
+      "finished_at": null,
+      "when": "on_success",
+      "manual": false,
+      "user": {
+        "name": "Daniel Mican",
+        "username": "dm03514",
+        "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+      },
+      "runner": null,
+      "artifacts_file": {
+        "filename": null,
+        "size": null
+      }
+    }
+  ]
+}
