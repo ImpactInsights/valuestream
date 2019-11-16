@@ -167,7 +167,7 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 
 	if entry == nil {
 		return traces.SpanMissingError{
-			Err: fmt.Errorf("span not found for span: %q", spanID),
+			Err: fmt.Errorf("span not found for SpanID: %q", spanID),
 		}
 	}
 

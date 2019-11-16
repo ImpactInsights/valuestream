@@ -10,6 +10,10 @@ type SpanState string
 type EventState string
 
 const (
+	TracePrefix string = "vstrace"
+)
+
+const (
 	StartState        SpanState = "start"
 	EndState          SpanState = "end"
 	IntermediaryState SpanState = "intermediary"

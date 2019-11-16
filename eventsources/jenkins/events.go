@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/types"
+	log "github.com/sirupsen/logrus"
+	"strconv"
 	"strings"
 )
 
@@ -41,21 +43,27 @@ type BuildEvent struct {
 }
 
 func (be BuildEvent) SpanID() (string, error) {
-	return strings.Join([]string{
-		"vstrace",
+	id := strings.Join([]string{
+		eventsources.TracePrefix,
 		sourceName,
 		types.BuildEventType,
 		be.JobName,
-		be.BuildURL,
-	}, "-"), nil
+		strconv.Itoa(be.Number),
+	}, "-")
+	log.Debugf("jenkins.BuildEvent.SpanID(): %q", id)
+
+	return id, nil
 }
 
-func (be BuildEvent) branchID() string {
+func (be BuildEvent) branchID() *string {
+	if be.ScmInfo.Branch == nil {
+		return nil
+	}
 	branch := *be.ScmInfo.Branch
 	if strings.HasPrefix(branch, "origin/") {
-		return strings.TrimPrefix(branch, "origin/")
+		branch = strings.TrimPrefix(branch, "origin/")
 	}
-	return branch
+	return &branch
 }
 
 func (be BuildEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
@@ -93,16 +101,7 @@ func (be BuildEvent) ParentSpanID() (*string, error) {
 		return &id, nil
 	}
 
-	return nil, nil
-
-	/*
-		TODO need to parse out the repo from this
-		branchID := traces.PrefixSCM(be.branchID())
-
-		if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
-			return &branchID, nil
-		}
-	*/
+	return be.branchID(), nil
 }
 
 func (be BuildEvent) String() (string, error) {

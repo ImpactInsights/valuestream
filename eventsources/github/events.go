@@ -6,6 +6,7 @@ import (
 	"github.com/ImpactInsights/valuestream/eventsources/types"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -29,7 +30,7 @@ func (ie IssuesEvent) SpanID() (string, error) {
 	}
 
 	return strings.Join([]string{
-		"vstrace",
+		eventsources.TracePrefix,
 		sourceName,
 		types.IssueEventType,
 		ie.Repo.GetName(),
@@ -117,7 +118,7 @@ func (pr PREvent) SpanID() (string, error) {
 		return "", fmt.Errorf("event must contain pull request id")
 	}
 	return strings.Join([]string{
-		"vstrace",
+		eventsources.TracePrefix,
 		sourceName,
 		types.PullRequestEventType,
 		pr.Repo.GetName(),
@@ -127,7 +128,7 @@ func (pr PREvent) SpanID() (string, error) {
 
 func (pr PREvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
-	tags["service"] = "github"
+	tags["service"] = sourceName
 
 	if pr.GetPullRequest() != nil {
 		if pr.PullRequest.GetUser() != nil {
@@ -169,7 +170,16 @@ func (pr PREvent) Tags() (map[string]interface{}, error) {
 // ParentSpanID inspects the PullRequestEvent payload for any references to a parent trace
 func (pr PREvent) ParentSpanID() (*string, error) {
 	matches, err := traces.Matches(pr.PullRequest.Head.GetRef())
+	log.Debugf("github.PREvent.ParentSpanID(): %q. Matches: %+v, err: %q",
+		pr.PullRequest.Head.GetRef(),
+		matches,
+		err,
+	)
 	if err != nil {
+		return nil, err
+	}
+
+	if len(matches) == 0 {
 		return nil, err
 	}
 
