@@ -118,13 +118,13 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 
 	// if it does than make sure to establish the ChildOf relationship
 	if parentID != nil {
-		parentSpan, err := wh.Traces.Get(ctx, tracer, *parentID)
+		entry, err := wh.Traces.Get(ctx, tracer, *parentID)
 		if err != nil {
 			return err
 		}
 
-		if parentSpan != nil {
-			opts = append(opts, opentracing.ChildOf(parentSpan.Context()))
+		if entry != nil {
+			opts = append(opts, opentracing.ChildOf(entry.Span.Context()))
 		}
 	}
 
@@ -151,7 +151,12 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 	}
 
 	if traceID != nil {
-		wh.Traces.Set(ctx, *traceID, span)
+		// if span set has errored do not continue?
+		if err := wh.Traces.Set(ctx, *traceID, traces.StoreEntry{
+			Span: span,
+		}); err != nil {
+			return err
+		}
 	}
 
 	// else we need to just set the span for future events
@@ -160,7 +165,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 		return err
 	}
 
-	if err := wh.Spans.Set(ctx, spanID, span); err != nil {
+	if err := wh.Spans.Set(ctx, spanID, traces.StoreEntry{Span: span}); err != nil {
 		return err
 	}
 
@@ -173,12 +178,12 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 		return err
 	}
 
-	span, err := wh.Spans.Get(ctx, tracer, spanID)
+	entry, err := wh.Spans.Get(ctx, tracer, spanID)
 	if err != nil {
 		return err
 	}
 
-	if span == nil {
+	if entry == nil {
 		return traces.SpanMissingError{
 			Err: fmt.Errorf("span not found for span: %q", spanID),
 		}
@@ -190,8 +195,8 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 		return err
 	}
 
-	span.SetTag("error", isE)
-	span.Finish()
+	entry.Span.SetTag("error", isE)
+	entry.Span.Finish()
 
 	if err := wh.Spans.Delete(ctx, spanID); err != nil {
 		return err
@@ -213,6 +218,8 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 }
 
 func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+
+	// need to get the current event states....
 	state, err := e.State()
 
 	if err != nil {
