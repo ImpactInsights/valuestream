@@ -7,6 +7,8 @@ import (
 
 type SpanState string
 
+type EventState string
+
 const (
 	StartState        SpanState = "start"
 	EndState          SpanState = "end"

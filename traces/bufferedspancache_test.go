@@ -13,18 +13,27 @@ func TestBufferedSpans_Set_OverBuffer_Bounded(t *testing.T) {
 	assert.NoError(t, err)
 
 	tracer := mocktracer.New()
-	span1 := tracer.StartSpan("span1")
-	span2 := tracer.StartSpan("span2")
+	entry1 := StoreEntry{
+		Span: tracer.StartSpan("span1"),
+	}
 
-	spans.Set(ctx, "span1", span1)
-	spans.Set(ctx, "span2", span2)
+	entry2 := StoreEntry{
+		Span: tracer.StartSpan("span2"),
+	}
+
+	err = spans.Set(ctx, "span1", entry1)
+	assert.NoError(t, err)
+
+	err = spans.Set(ctx, "span2", entry2)
+	assert.EqualError(t, err, "maxAllowedSpans: 1 reached")
+
 	c, _ := spans.Count()
 	assert.Equal(t, 1, c)
 
-	// check that the span is the second span
-	s2, err := spans.Get(ctx, tracer, "span2")
+	// check that the span is the first span
+	e1, err := spans.Get(ctx, tracer, "span1")
 	assert.NoError(t, err)
-	assert.Equal(t, span2, s2)
+	assert.Equal(t, entry1, *e1)
 }
 
 func TestBufferedSpans_Delete(t *testing.T) {
@@ -33,12 +42,15 @@ func TestBufferedSpans_Delete(t *testing.T) {
 	assert.NoError(t, err)
 
 	tracer := mocktracer.New()
-	span1 := tracer.StartSpan("span1")
-	spans.Set(ctx, "span1", span1)
-	spans.Delete(ctx, "span1")
+	entry1 := StoreEntry{
+		Span: tracer.StartSpan("span1"),
+	}
+	err = spans.Set(ctx, "span1", entry1)
+	assert.NoError(t, err)
+	err = spans.Delete(ctx, "span1")
+	assert.NoError(t, err)
 
 	c, _ := spans.Count()
 
 	assert.Equal(t, 0, c)
-	assert.Nil(t, spans.buf[0])
 }
