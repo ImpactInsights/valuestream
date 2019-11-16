@@ -10,12 +10,16 @@ import (
 	"reflect"
 )
 
+const (
+	sourceName string = "gitlab"
+)
+
 type Source struct {
 	tracer opentracing.Tracer
 }
 
 func (s Source) Name() string {
-	return service
+	return sourceName
 }
 
 func (s *Source) Tracer() opentracing.Tracer {

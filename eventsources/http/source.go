@@ -12,6 +12,10 @@ import (
 	"net/http"
 )
 
+const (
+	sourceName string = "customhttp"
+)
+
 type EventSource struct {
 	tracer opentracing.Tracer
 }

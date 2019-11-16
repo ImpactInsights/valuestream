@@ -7,31 +7,29 @@ import (
 	"github.com/ImpactInsights/valuestream/traces"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
-	"regexp"
 	"strconv"
 	"strings"
 )
-
-const service string = "gitlab"
 
 type IssueEvent struct {
 	*gitlab.IssueEvent
 }
 
 func (ie IssueEvent) OperationName() string {
-	return "issue"
+	return types.IssueEventType
 }
 
 func (ie IssueEvent) SpanID() (string, error) {
-	if ie.ObjectAttributes.ID == 0 {
+	if ie.ObjectAttributes.IID == 0 {
 		return "", fmt.Errorf("event does not contain Issue.ID")
 	}
 
 	return strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.IssueEventType,
-		"gitlab",
 		ie.Project.Name,
-		strconv.Itoa(ie.ObjectAttributes.ID),
+		strconv.Itoa(ie.ObjectAttributes.IID),
 	}, "-"), nil
 }
 
@@ -65,7 +63,7 @@ func (ie IssueEvent) ParentSpanID() (*string, error) {
 
 func (ie IssueEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
-	tags["service"] = service
+	tags["service"] = sourceName
 
 	tags["project.name"] = ie.Project.Name
 	tags["project.namespace"] = ie.Project.Namespace
@@ -91,35 +89,21 @@ func (ie IssueEvent) Tags() (map[string]interface{}, error) {
 	return tags, nil
 }
 
-func (ie IssueEvent) TraceID() (*string, error) {
-	// vstrace-github-{{repository.name}}-{{issue.number}}
-	if ie.Repository == nil || ie.ObjectAttributes.ID == 0 {
-		return nil, nil
-	}
-
-	traceID := traces.PrefixWith(
-		types.IssueEventType,
-		fmt.Sprintf("vstrace-gitlab-%s-%d", ie.Repository.Name, ie.ObjectAttributes.IID),
-	)
-
-	log.Debugf("gitlab.IssueEvent.TraceID(): trace: %q", traceID)
-	return &traceID, nil
-}
-
 type MergeEvent struct {
 	*gitlab.MergeEvent
 }
 
 func (me MergeEvent) OperationName() string {
-	return "pull_request"
+	return types.PullRequestEventType
 }
 
 func (me MergeEvent) SpanID() (string, error) {
 	return strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.PullRequestEventType,
-		service,
-		strconv.Itoa(me.Project.ID),
-		strconv.Itoa(me.ObjectAttributes.ID),
+		me.Project.Name,
+		strconv.Itoa(me.ObjectAttributes.IID),
 	}, "-"), nil
 }
 
@@ -152,25 +136,17 @@ func (me MergeEvent) IsError() (bool, error) {
 }
 
 func (me MergeEvent) ParentSpanID() (*string, error) {
-	r, _ := regexp.Compile("vstrace-[0-9A-Za-z]+-[0-9A-Za-z-]+-[0-9]+")
-	matches := r.FindStringSubmatch(me.ObjectAttributes.Description)
-	log.Debugf("MergeEvent.ParentSpanID() matches %+v", matches)
-	if len(matches) == 0 {
-		return nil, nil
+	matches, err := traces.Matches(me.ObjectAttributes.Description)
+	if err != nil {
+		return nil, err
 	}
-	// TODO the type needs to be included in the trace in order
-	// to support referencing multiple different types....
-
-	id := traces.PrefixWith(
-		types.IssueEventType,
-		matches[0],
-	)
-	return &id, nil
+	log.Debugf("MergeEvent.ParentSpanID() matches %+v", matches)
+	return &matches[0], nil
 }
 
 func (me MergeEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
-	tags["service"] = service
+	tags["service"] = sourceName
 
 	tags["project.name"] = me.Project.Name
 	tags["project.namespace"] = me.Project.Namespace
@@ -191,31 +167,17 @@ type PipelineEvent struct {
 }
 
 func (pe PipelineEvent) OperationName() string {
-	return fmt.Sprintf("%s-%s",
-		types.BuildEventType,
-		pe.ObjectAttributes.Status,
-	)
+	return "pipeline"
 }
 
 func (pe PipelineEvent) SpanID() (string, error) {
 	return strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.BuildEventType,
-		service,
-		strconv.Itoa(pe.Project.ID),
+		pe.Project.Name,
 		strconv.Itoa(pe.ObjectAttributes.ID),
 	}, "-"), nil
-}
-
-func (pe PipelineEvent) TraceID() (*string, error) {
-	// start event goes in the TraceID()
-	id := strings.Join([]string{
-		types.BuildEventType,
-		service,
-		pe.Project.Name,
-		pe.ObjectAttributes.Ref,
-		strconv.Itoa(pe.ObjectAttributes.ID),
-	}, "-")
-	return &id, nil
 }
 
 func (pe PipelineEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
@@ -263,8 +225,9 @@ func (pe PipelineEvent) ParentSpanID() (*string, error) {
 
 func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
-	tags["service"] = service
+	tags["service"] = sourceName
 	tags["event.type"] = "pipeline"
+	tags["event.state"] = pe.ObjectAttributes.Status
 
 	tags["project.id"] = pe.Project.ID
 	tags["project.name"] = pe.Project.Name
@@ -282,11 +245,11 @@ func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
 	tags["build.sha"] = pe.ObjectAttributes.SHA
 	tags["build.before_sha"] = pe.ObjectAttributes.BeforeSHA
 
-	tID, _ := pe.TraceID()
-	tags["vstrace.id"] = *tID
-
 	sID, _ := pe.SpanID()
 	tags["vstrace.span.id"] = sID
+
+	state, _ := pe.State(nil)
+	tags["vstrace.state"] = state
 
 	return tags, nil
 }
@@ -296,18 +259,16 @@ type JobEvent struct {
 }
 
 func (je JobEvent) OperationName() string {
-	return strings.Join([]string{
-		types.BuildEventType,
-		je.BuildStage,
-		je.BuildStatus,
-	}, "-")
+	return types.BuildEventType
+
 }
 
 func (je JobEvent) SpanID() (string, error) {
 	return strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.BuildEventType,
-		"gitlab",
-		strconv.Itoa(je.ProjectID),
+		je.ProjectName,
 		strconv.Itoa(je.BuildID),
 	}, "-"), nil
 }
@@ -327,7 +288,7 @@ func (je JobEvent) State(prev *eventsources.EventState) (eventsources.SpanState,
 
 	log.Debugf("event state: %q", state)
 
-	if state == "pending" {
+	if state == "pending" || state == "created"{
 		return eventsources.StartState, nil
 	}
 
@@ -355,25 +316,23 @@ func (je JobEvent) IsError() (bool, error) {
 }
 
 func (je JobEvent) ParentSpanID() (*string, error) {
+	// TODO
 	id := strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.BuildEventType,
-		service,
 		je.Repository.Name,
-		je.Ref,
 		strconv.Itoa(je.Commit.ID),
 	}, "-")
 
 	return &id, nil
 }
 
-func (je JobEvent) TraceID() (*string, error) {
-	return nil, nil
-}
-
 func (je JobEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
-	tags["service"] = service
-	tags["event.type"] = "build"
+	tags["service"] = sourceName
+	tags["event.state"] = je.BuildStatus
+
 	tags["build.kind"] = je.ObjectKind
 	tags["build.ref"] = je.Ref
 	tags["build.tag"] = je.Tag
@@ -400,6 +359,9 @@ func (je JobEvent) Tags() (map[string]interface{}, error) {
 
 	parentID, _ := je.ParentSpanID()
 	tags["vstrace.parent.id"] = *parentID
+
+	state, _ := je.State(nil)
+	tags["vstrace.state"] = state
 
 	return tags, nil
 }

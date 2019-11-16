@@ -10,6 +10,10 @@ type SpanState string
 type EventState string
 
 const (
+	TracePrefix string = "vstrace"
+)
+
+const (
 	StartState        SpanState = "start"
 	EndState          SpanState = "end"
 	IntermediaryState SpanState = "intermediary"
@@ -23,7 +27,6 @@ type Event interface {
 	ParentSpanID() (*string, error)
 	IsError() (bool, error)
 	State(prev *EventState) (SpanState, error)
-	TraceID() (*string, error)
 	Tags() (map[string]interface{}, error)
 }
 

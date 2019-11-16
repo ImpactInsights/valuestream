@@ -113,6 +113,8 @@ func (s *BufferedSpans) Set(ctx context.Context, id string, entry StoreEntry) er
 	if len(s.spans) == s.maxAllowedSpans {
 		return fmt.Errorf("maxAllowedSpans: %d reached", s.maxAllowedSpans)
 	}
+
+	log.Debugf("BufferedSpans.Set(), id: %q", id)
 	s.spans[id] = entry
 	return nil
 }

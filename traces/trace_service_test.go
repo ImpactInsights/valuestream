@@ -30,7 +30,7 @@ func init() {
 }
 
 func closePullRequest(t *testing.T, githubURL *url.URL, client *http.Client) {
-	branchName := "vstrace-github-valuestream-1"
+	branchName := "vstrace-github-issue-valuestream-1"
 	action := "closed"
 	id := int64(1)
 	pr := &github.PullRequestEvent{
@@ -51,7 +51,7 @@ func closePullRequest(t *testing.T, githubURL *url.URL, client *http.Client) {
 }
 
 func createPullRequest(t *testing.T, githubURL *url.URL, client *http.Client) {
-	branchName := "vstrace-github-valuestream-1"
+	branchName := "vstrace-github-issue-valuestream-1"
 	openedAction := "opened"
 	id := int64(1)
 	pr := &github.PullRequestEvent{
@@ -124,9 +124,10 @@ func createJenkinsBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client) 
 {
 	"result": "INPROGRESS",
 	"buildUrl": "aUrl",
+	"number": 777,
 	"jobName": "createJenkinsBuild",
 	"parameters": {
-		"vstrace-trace-id": "vstrace-github-valuestream-1"
+		"vstrace-trace-id": "vstrace-github-issue-valuestream-1"
     }
 }`)
 
@@ -148,9 +149,10 @@ func createJenkinsDeploy(t *testing.T, jenkinsURL *url.URL, client *http.Client)
 {
 	"result": "INPROGRESS",
 	"buildUrl": "aUrl",
+	"number": 777,
 	"jobName": "createJenkinsBuild",
 	"parameters": {
-		"vstrace-trace-id": "vstrace-github-valuestream-1",
+		"vstrace-trace-id": "vstrace-github-issue-valuestream-1",
 		"type": "deploy"
     }
 }`)
@@ -173,8 +175,9 @@ func jenkinsCIBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client, resu
 	"result": "%s",
 	"buildUrl": "aUrl",
 	"jobName": "jenkinsCIBuild",
+	"number": 777,
 	"scmInfo": {
-		"branch": "origin/vstrace-github-valuestream-1"
+		"branch": "origin/vstrace-github-issue-valuestream-1"
     }
 }`, result))
 
@@ -195,6 +198,8 @@ func finishJenkinsBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client) 
 	event := []byte(`
 {
 	"result": "SUCCESS",
+	"jobName": "createJenkinsBuild",
+	"number": 777,
 	"buildUrl": "aUrl"
 }`)
 

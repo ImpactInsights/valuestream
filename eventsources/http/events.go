@@ -1,8 +1,8 @@
 package http
 
 import (
-	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
+	"strings"
 )
 
 type Event struct {
@@ -10,12 +10,21 @@ type Event struct {
 	Action     string
 	ParentID   *string
 	Error      bool
+	Namespace  string
+	Type       string
 	Metadata   map[string]interface{}
 }
 
 // ID is how an INDIVIDUAL event is referenced internally
 func (e Event) SpanID() (string, error) {
-	return e.Identifier, nil
+
+	return strings.Join([]string{
+		"vstrace",
+		sourceName,
+		e.Type,
+		e.Namespace,
+		e.Identifier,
+	}, "-"), nil
 }
 
 func (e Event) OperationName() string {
@@ -30,17 +39,6 @@ func (e Event) ParentSpanID() (*string, error) {
 
 func (e Event) IsError() (bool, error) {
 	return e.Error, nil
-}
-
-// TraceID is how other events reference this event!
-func (e Event) TraceID() (*string, error) {
-	spanID, err := e.SpanID()
-	if err != nil {
-		return nil, err
-	}
-
-	traceID := fmt.Sprintf("vstrace-custom-http-%s", spanID)
-	return &traceID, nil
 }
 
 func (e Event) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
@@ -61,6 +59,6 @@ func (e Event) Tags() (map[string]interface{}, error) {
 		tags[k] = v
 	}
 
-	tags["service"] = "http"
+	tags["service"] = sourceName
 	return tags, nil
 }
