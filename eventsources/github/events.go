@@ -6,8 +6,8 @@ import (
 	"github.com/ImpactInsights/valuestream/eventsources/types"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/google/go-github/github"
-	"regexp"
 	"strconv"
+	"strings"
 )
 
 type IssuesEvent struct {
@@ -20,14 +20,21 @@ func (ie IssuesEvent) OperationName() string {
 
 // ID identifies the issue event by its github Issue.ID
 func (ie IssuesEvent) SpanID() (string, error) {
-	if ie.Issue == nil || ie.Issue.ID == nil {
+	if ie.Issue == nil || ie.Issue.Number == nil {
 		return "", fmt.Errorf("event does not contain Issue.ID")
 	}
 
-	return traces.PrefixWith(
+	if ie.Repo == nil || ie.Repo.Name == nil {
+		return "", fmt.Errorf("event does not contain Repo.Name")
+	}
+
+	return strings.Join([]string{
+		"vstrace",
+		sourceName,
 		types.IssueEventType,
-		strconv.Itoa(int(*ie.Issue.ID)),
-	), nil
+		ie.Repo.GetName(),
+		strconv.Itoa(ie.Issue.GetNumber()),
+	}, "-"), nil
 }
 
 func (ie IssuesEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
@@ -81,21 +88,9 @@ func (ie IssuesEvent) Tags() (map[string]interface{}, error) {
 		}
 	}
 
-	tags["service"] = "github"
+	tags["service"] = sourceName
 
 	return tags, nil
-}
-
-func (ie IssuesEvent) TraceID() (*string, error) {
-	// vstrace-github-{{repository.name}}-{{issue.number}}
-	if ie.Repo == nil || ie.Repo.Name == nil || ie.Issue == nil || ie.Issue.Number == nil {
-		return nil, nil
-	}
-	traceID := traces.PrefixWith(
-		types.IssueEventType,
-		fmt.Sprintf("vstrace-github-%s-%d", ie.Repo.GetName(), ie.Issue.GetNumber()),
-	)
-	return &traceID, nil
 }
 
 type PREvent struct {
@@ -106,10 +101,6 @@ func (pr PREvent) OperationName() string {
 	return "pull_request"
 }
 
-func (pr PREvent) TraceID() (*string, error) {
-	return pr.BranchRef(), nil
-}
-
 func (pr PREvent) BranchRef() *string {
 	if pr.GetPullRequest() == nil {
 		return nil
@@ -117,16 +108,21 @@ func (pr PREvent) BranchRef() *string {
 	if pr.PullRequest.GetHead() == nil {
 		return nil
 	}
-	res := traces.PrefixSCM(*pr.PullRequest.Head.Ref)
-	return &res
+
+	return pr.PullRequest.Head.Ref
 }
 
 func (pr PREvent) SpanID() (string, error) {
 	if pr.PullRequest == nil || pr.PullRequest.ID == nil {
 		return "", fmt.Errorf("event must contain pull request id")
 	}
-	prID := *pr.PullRequest.ID
-	return strconv.Itoa(int(prID)), nil
+	return strings.Join([]string{
+		"vstrace",
+		sourceName,
+		types.PullRequestEventType,
+		pr.Repo.GetName(),
+		strconv.Itoa(int(pr.PullRequest.GetID())),
+	}, "-"), nil
 }
 
 func (pr PREvent) Tags() (map[string]interface{}, error) {
@@ -172,19 +168,12 @@ func (pr PREvent) Tags() (map[string]interface{}, error) {
 
 // ParentSpanID inspects the PullRequestEvent payload for any references to a parent trace
 func (pr PREvent) ParentSpanID() (*string, error) {
-	r, _ := regexp.Compile("vstrace-[0-9A-Za-z]+-[0-9A-Za-z]+-[0-9]+")
-	matches := r.FindStringSubmatch(*pr.PullRequest.Head.Ref)
-	if len(matches) == 0 {
-		return nil, nil
+	matches, err := traces.Matches(pr.PullRequest.Head.GetRef())
+	if err != nil {
+		return nil, err
 	}
-	// TODO the type needs to be included in the trace in order
-	// to support referencing multiple different types....
 
-	id := traces.PrefixWith(
-		types.IssueEventType,
-		matches[0],
-	)
-	return &id, nil
+	return &matches[0], nil
 }
 
 func (pr PREvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {

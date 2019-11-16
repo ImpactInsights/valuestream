@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/types"
-	"github.com/ImpactInsights/valuestream/traces"
 	"strings"
 )
 
@@ -42,7 +41,13 @@ type BuildEvent struct {
 }
 
 func (be BuildEvent) SpanID() (string, error) {
-	return be.BuildURL, nil
+	return strings.Join([]string{
+		"vstrace",
+		sourceName,
+		types.BuildEventType,
+		be.JobName,
+		be.BuildURL,
+	}, "-"), nil
 }
 
 func (be BuildEvent) branchID() string {
@@ -84,26 +89,25 @@ func (be BuildEvent) IsError() (bool, error) {
 // Then will check if the build is part of SCM
 func (be BuildEvent) ParentSpanID() (*string, error) {
 	id, found := be.Parameters["vstrace-trace-id"]
-	prefixed := traces.PrefixWith(types.IssueEventType, id)
 	if found {
-		return &prefixed, nil
+		return &id, nil
 	}
 
-	branchID := traces.PrefixSCM(be.branchID())
-
-	if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
-		return &branchID, nil
-	}
 	return nil, nil
+
+	/*
+		TODO need to parse out the repo from this
+		branchID := traces.PrefixSCM(be.branchID())
+
+		if be.ScmInfo != nil && be.ScmInfo.Branch != nil {
+			return &branchID, nil
+		}
+	*/
 }
 
 func (be BuildEvent) String() (string, error) {
 	b, err := json.Marshal(be)
 	return string(b), err
-}
-
-func (be BuildEvent) TraceID() (*string, error) {
-	return nil, nil
 }
 
 func (be BuildEvent) Tags() (map[string]interface{}, error) {

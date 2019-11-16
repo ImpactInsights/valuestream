@@ -133,17 +133,10 @@ func main() {
 		gitlabTracer = tracers.LoggingTracer{}
 	}
 
-	ts, err := traces.NewBufferedSpanStore(1000)
+	spans, err := traces.NewBufferedSpanStore(1000)
 	if err != nil {
 		panic(err)
 	}
-	// go ts.Monitor(ctx, time.Second*60, "traces")
-
-	jenkinsSpans, err := traces.NewBufferedSpanStore(500)
-	if err != nil {
-		panic(err)
-	}
-	// go jenkinsSpans.Monitor(ctx, time.Second*60, "jenkins")
 
 	jenkinsSource, err := jenkins.NewSource(jenkinsTracer)
 	if err != nil {
@@ -154,18 +147,11 @@ func main() {
 		jenkinsSource,
 		tracers.NewRequestScopedUsingSources(),
 		nil,
-		ts,
-		jenkinsSpans,
+		spans,
 	)
 	if err != nil {
 		panic(err)
 	}
-
-	githubSpans, err := traces.NewBufferedSpanStore(500)
-	if err != nil {
-		panic(err)
-	}
-	// go githubSpans.Monitor(ctx, time.Second*20, "github")
 
 	var githubSecretToken []byte
 
@@ -182,8 +168,7 @@ func main() {
 		githubSource,
 		tracers.NewRequestScopedUsingSources(),
 		githubSecretToken,
-		ts,
-		githubSpans,
+		spans,
 	)
 	if err != nil {
 		panic(err)
@@ -194,33 +179,20 @@ func main() {
 		panic(err)
 	}
 
-	customHTTPSpans, err := traces.NewBufferedSpanStore(500)
-	if err != nil {
-		panic(err)
-	}
-	// go customHTTPSpans.Monitor(ctx, time.Second*20, customHTTP.Name())
-
 	customHTTPWebhook, err := webhooks.New(
 		customHTTP,
 		tracers.NewRequestScopedUsingSources(),
 		nil,
-		ts,
-		customHTTPSpans,
+		spans,
 	)
 
 	gitlab, err := gitlab2.NewSource(gitlabTracer)
-	gitlabSpans, err := traces.NewBufferedSpanStore(500)
-	if err != nil {
-		panic(err)
-	}
-	// go gitlabSpans.Monitor(ctx, time.Second*20, gitlab.Name())
 
 	gitlabWebhook, err := webhooks.New(
 		gitlab,
 		tracers.NewRequestScopedUsingSources(),
 		nil,
-		ts,
-		gitlabSpans,
+		spans,
 	)
 
 	r := mux.NewRouter()

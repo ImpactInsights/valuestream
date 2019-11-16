@@ -7,7 +7,6 @@ import (
 	"github.com/ImpactInsights/valuestream/traces"
 	log "github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -152,20 +151,12 @@ func (me MergeEvent) IsError() (bool, error) {
 }
 
 func (me MergeEvent) ParentSpanID() (*string, error) {
-	r, _ := regexp.Compile("vstrace-[0-9A-Za-z]+-[0-9A-Za-z-]+-[0-9]+")
-	matches := r.FindStringSubmatch(me.ObjectAttributes.Description)
-	log.Debugf("MergeEvent.ParentSpanID() matches %+v", matches)
-	if len(matches) == 0 {
-		return nil, nil
+	matches, err := traces.Matches(me.ObjectAttributes.Description)
+	if err != nil {
+		return nil, err
 	}
-	// TODO the type needs to be included in the trace in order
-	// to support referencing multiple different types....
-
-	id := traces.PrefixWith(
-		types.IssueEventType,
-		matches[0],
-	)
-	return &id, nil
+	log.Debugf("MergeEvent.ParentSpanID() matches %+v", matches)
+	return &matches[0], nil
 }
 
 func (me MergeEvent) Tags() (map[string]interface{}, error) {
@@ -191,10 +182,7 @@ type PipelineEvent struct {
 }
 
 func (pe PipelineEvent) OperationName() string {
-	return fmt.Sprintf("%s-%s",
-		types.BuildEventType,
-		pe.ObjectAttributes.Status,
-	)
+	return "pipeline"
 }
 
 func (pe PipelineEvent) SpanID() (string, error) {
@@ -355,9 +343,11 @@ func (je JobEvent) IsError() (bool, error) {
 }
 
 func (je JobEvent) ParentSpanID() (*string, error) {
+	// TODO
 	id := strings.Join([]string{
-		types.BuildEventType,
+		"vstrace",
 		service,
+		types.BuildEventType,
 		je.Repository.Name,
 		je.Ref,
 		strconv.Itoa(je.Commit.ID),

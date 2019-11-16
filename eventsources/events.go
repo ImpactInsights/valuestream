@@ -23,7 +23,6 @@ type Event interface {
 	ParentSpanID() (*string, error)
 	IsError() (bool, error)
 	State(prev *EventState) (SpanState, error)
-	TraceID() (*string, error)
 	Tags() (map[string]interface{}, error)
 }
 
