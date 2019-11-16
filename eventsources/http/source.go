@@ -24,12 +24,14 @@ func (es *EventSource) ValidatePayload(r *http.Request, secretKey []byte) ([]byt
 		return nil, fmt.Errorf("unable to read body")
 	}
 
-	sig := r.Header.Get(webhooks.SignatureHeader)
-	mac := hmac.New(sha256.New, []byte(secretKey))
-	mac.Write(body)
-	expectedMAC := mac.Sum(nil)
-	if !hmac.Equal([]byte(sig), expectedMAC) {
-		return nil, fmt.Errorf("invalid event signature")
+	if secretKey != nil {
+		sig := r.Header.Get(webhooks.SignatureHeader)
+		mac := hmac.New(sha256.New, []byte(secretKey))
+		mac.Write(body)
+		expectedMAC := mac.Sum(nil)
+		if !hmac.Equal([]byte(sig), expectedMAC) {
+			return nil, fmt.Errorf("invalid event signature")
+		}
 	}
 
 	return body, nil
