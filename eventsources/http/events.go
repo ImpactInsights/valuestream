@@ -43,7 +43,7 @@ func (e Event) TraceID() (*string, error) {
 	return &traceID, nil
 }
 
-func (e Event) State() (eventsources.SpanState, error) {
+func (e Event) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	switch e.Action {
 	case "start":
 		return eventsources.StartState, nil

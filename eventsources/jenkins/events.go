@@ -53,7 +53,7 @@ func (be BuildEvent) branchID() string {
 	return branch
 }
 
-func (be BuildEvent) State() (eventsources.SpanState, error) {
+func (be BuildEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if be.Result == "INPROGRESS" {
 		return eventsources.StartState, nil
 	}

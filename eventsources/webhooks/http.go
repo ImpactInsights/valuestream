@@ -219,8 +219,23 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 
 func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
 
-	// need to get the current event states....
-	state, err := e.State()
+	// check to see if there are any current events for this event
+	spanID, err := e.SpanID()
+	if err != nil {
+		return err
+	}
+
+	entry, err := wh.Spans.Get(ctx, tracer, spanID)
+	if err != nil {
+		return err
+	}
+
+	var prevState *eventsources.EventState
+	if entry != nil {
+		prevState = entry.State
+	}
+
+	state, err := e.State(prevState)
 
 	if err != nil {
 		return err
