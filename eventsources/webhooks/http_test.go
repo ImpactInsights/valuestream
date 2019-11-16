@@ -165,6 +165,7 @@ func TestWebhook_Handler_Success(t *testing.T) {
 				}, nil
 			},
 		},
+		Spans: traces.NewMemoryUnboundedSpanStore(),
 	}
 	wh.Handler(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)

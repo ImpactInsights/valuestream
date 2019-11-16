@@ -30,7 +30,7 @@ func (ie IssuesEvent) SpanID() (string, error) {
 	), nil
 }
 
-func (ie IssuesEvent) State() (eventsources.SpanState, error) {
+func (ie IssuesEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if ie.Action == nil {
 		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
@@ -187,7 +187,7 @@ func (pr PREvent) ParentSpanID() (*string, error) {
 	return &id, nil
 }
 
-func (pr PREvent) State() (eventsources.SpanState, error) {
+func (pr PREvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if pr.Action == nil {
 		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}

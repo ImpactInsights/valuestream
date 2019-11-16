@@ -56,7 +56,7 @@ func (s StubEvent) ParentSpanID() (*string, error) {
 func (s StubEvent) IsError() (bool, error) {
 	return s.IsErrorReturn, s.IsErrorReturnError
 }
-func (s StubEvent) State() (SpanState, error) {
+func (s StubEvent) State(prev *EventState) (SpanState, error) {
 	return s.StateReturn, s.StateReturnError
 }
 func (s StubEvent) TraceID() (*string, error) {

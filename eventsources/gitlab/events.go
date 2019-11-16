@@ -35,7 +35,7 @@ func (ie IssueEvent) SpanID() (string, error) {
 	}, "-"), nil
 }
 
-func (ie IssueEvent) State() (eventsources.SpanState, error) {
+func (ie IssueEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if ie.ObjectAttributes.State == "" {
 		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
@@ -127,7 +127,7 @@ func (me MergeEvent) TraceID() (*string, error) {
 	return nil, nil
 }
 
-func (me MergeEvent) State() (eventsources.SpanState, error) {
+func (me MergeEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if me.ObjectAttributes.State == "" {
 		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
@@ -218,7 +218,7 @@ func (pe PipelineEvent) TraceID() (*string, error) {
 	return &id, nil
 }
 
-func (pe PipelineEvent) State() (eventsources.SpanState, error) {
+func (pe PipelineEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	state := pe.ObjectAttributes.Status
 
 	if state == "" {
@@ -318,7 +318,7 @@ func (je JobEvent) SpanID() (string, error) {
 // - running
 // - canceled
 // - success
-func (je JobEvent) State() (eventsources.SpanState, error) {
+func (je JobEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
 	if je.BuildStatus == "" {
 		return eventsources.UnknownState, fmt.Errorf("event does not contain action")
 	}
