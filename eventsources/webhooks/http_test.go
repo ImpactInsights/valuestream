@@ -85,7 +85,7 @@ func TestWebhook_handleEndEvent_WithTrace_Success(t *testing.T) {
 	wh.Spans.Set(
 		context.Background(),
 		spanID,
-		span,
+		traces.StoreEntry{Span: span},
 	)
 
 	assert.Nil(t, wh.handleEndEvent(
@@ -133,13 +133,13 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 	numSpans, _ := wh.Spans.Count()
 	assert.Equal(t, 1, numSpans)
 
-	span, err := wh.Spans.Get(context.Background(), tracer, spanID)
+	entry, err := wh.Spans.Get(context.Background(), tracer, spanID)
 	assert.NoError(t, err)
-	assert.Equal(t, e.OperationName(), span.(*mocktracer.MockSpan).OperationName)
+	assert.Equal(t, e.OperationName(), entry.Span.(*mocktracer.MockSpan).OperationName)
 
-	trace, err := wh.Traces.Get(context.Background(), tracer, traceID)
+	entry, err = wh.Traces.Get(context.Background(), tracer, traceID)
 	assert.NoError(t, err)
-	assert.Equal(t, e.OperationName(), trace.(*mocktracer.MockSpan).OperationName)
+	assert.Equal(t, e.OperationName(), entry.Span.(*mocktracer.MockSpan).OperationName)
 }
 
 func TestWebhook_Handler_Success(t *testing.T) {
