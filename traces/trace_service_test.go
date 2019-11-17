@@ -8,6 +8,7 @@ import (
 	"fmt"
 	gh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/google/go-github/github"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/url"
@@ -133,7 +134,7 @@ func createJenkinsBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client) 
 
 	req, err := http.NewRequest(
 		"POST",
-		jenkinsURL.String()+"/",
+		jenkinsURL.String(),
 		bytes.NewReader(event),
 	)
 	assert.NoError(t, err)
@@ -159,7 +160,7 @@ func createJenkinsDeploy(t *testing.T, jenkinsURL *url.URL, client *http.Client)
 
 	req, err := http.NewRequest(
 		"POST",
-		jenkinsURL.String()+"/",
+		jenkinsURL.String(),
 		bytes.NewReader(event),
 	)
 	assert.NoError(t, err)
@@ -183,7 +184,7 @@ func jenkinsCIBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client, resu
 
 	req, err := http.NewRequest(
 		"POST",
-		jenkinsURL.String()+"/",
+		jenkinsURL.String(),
 		bytes.NewReader(event),
 	)
 	assert.NoError(t, err)
@@ -205,7 +206,7 @@ func finishJenkinsBuild(t *testing.T, jenkinsURL *url.URL, client *http.Client) 
 
 	req, err := http.NewRequest(
 		"POST",
-		jenkinsURL.String()+"/",
+		jenkinsURL.String(),
 		bytes.NewReader(event),
 	)
 	assert.NoError(t, err)
@@ -224,11 +225,13 @@ func TestGithubJenkinsTrace(t *testing.T) {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath)
+	log.Infof("githubURL: %q", githubURL)
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath)
+	log.Infof("jenkinsURL: %q", jenkinsURL)
 
 	openIssue(t, githubURL, client)
 	createPullRequest(t, githubURL, client)
@@ -246,11 +249,13 @@ func TestGithubJenkinsPRBuildJenkinsDeployTrace(t *testing.T) {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath)
+	log.Infof("githubURL: %q", githubURL)
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath)
+	log.Infof("jenkinsURL: %q", jenkinsURL)
 
 	openIssue(t, githubURL, client)
 	createPullRequest(t, githubURL, client)

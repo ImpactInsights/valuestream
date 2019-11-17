@@ -197,7 +197,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.Handle("/jenkins/",
+	r.Handle("/jenkins",
 		promhttp.InstrumentHandlerDuration(
 			duration.MustCurryWith(prometheus.Labels{"handler": "jenkins_build"}),
 			promhttp.InstrumentHandlerCounter(counter,
@@ -208,7 +208,7 @@ func main() {
 		),
 	)
 
-	r.Handle("/customhttp/",
+	r.Handle("/customhttp",
 		promhttp.InstrumentHandlerDuration(
 			duration.MustCurryWith(prometheus.Labels{"handler": "custom_http"}),
 			promhttp.InstrumentHandlerCounter(counter,
@@ -219,7 +219,7 @@ func main() {
 		),
 	)
 
-	r.Handle("/github/",
+	r.Handle("/github",
 		promhttp.InstrumentHandlerDuration(
 			duration.MustCurryWith(prometheus.Labels{"handler": "github"}),
 			promhttp.InstrumentHandlerCounter(counter,
@@ -230,7 +230,7 @@ func main() {
 		),
 	)
 
-	r.Handle("/gitlab/",
+	r.Handle("/gitlab",
 		promhttp.InstrumentHandlerDuration(
 			duration.MustCurryWith(prometheus.Labels{"handler": "gitlab"}),
 			promhttp.InstrumentHandlerCounter(counter,
