@@ -288,7 +288,7 @@ func (je JobEvent) State(prev *eventsources.EventState) (eventsources.SpanState,
 
 	log.Debugf("event state: %q", state)
 
-	if state == "pending" || state == "created"{
+	if state == "pending" || state == "created" {
 		return eventsources.StartState, nil
 	}
 
