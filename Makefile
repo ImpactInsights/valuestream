@@ -36,12 +36,13 @@ test-service-github-ci-build-jenkins:
 		go test -run TestGithubJenkinsPRBuildJenkinsDeployTrace ./traces/trace_service_test.go -v -count=1
 
 test-service-events:
+	TEST_EVENTS_CUSTOM_HTTP_PATH=/customhttp \
 	TEST_EVENTS_JENKINS_PATH=/jenkins \
 	TEST_EVENTS_GITHUB_PATH=/github \
 	TEST_EVENTS_URL=http://localhost:7777 \
 	go test \
 		-run TestService \
 		-tags=service \
-		./eventsources/...
+		./eventsources/... -count=1
 
 .PHONY: test-unit start-stack fmt
