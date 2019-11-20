@@ -28,7 +28,7 @@ func (e Event) SpanID() (string, error) {
 }
 
 func (e Event) OperationName() string {
-	return "custom_http"
+	return e.Type
 }
 
 // ParentSpanID allows this HTTP event to reference any other

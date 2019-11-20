@@ -1,0 +1,13 @@
+{
+  "payload": {
+    "id": "1",
+    "action": "start",
+    "error": false,
+    "namespace": "myproj",
+    "type": "deploy",
+    "metadata": {
+      "key1": "val1",
+      "key2": "val2"
+    }
+  }
+}

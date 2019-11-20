@@ -1,0 +1,12 @@
+{
+  "payload": {
+    "result": "ABORTED",
+    "endTime": 1469453903,
+    "ciUrl": "http://localhost:8080/jenkins/",
+    "fullJobName": "jenkins_test",
+    "buildUrl": "aUrl",
+    "number": 252,
+    "jobName": "jenkins_test",
+    "duration": 9452
+  }
+}
