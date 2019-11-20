@@ -130,13 +130,13 @@ func TestServiceEvent_Jenkins(t *testing.T) {
 
 			spansResp, err := http.Get(baseURL + "/mocktracer/finished-spans")
 			assert.NoError(t, err)
-			defer spansResp.Body.Close()
 			assert.Equal(t, http.StatusOK, spansResp.StatusCode)
-
-			var spans []tracers.TestSpan
 
 			bs, err := ioutil.ReadAll(spansResp.Body)
 			assert.NoError(t, err)
+			spansResp.Body.Close()
+
+			var spans []tracers.TestSpan
 
 			err = json.Unmarshal(bs, &spans)
 			assert.NoError(t, err)

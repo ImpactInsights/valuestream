@@ -1,0 +1,139 @@
+{
+  "headers": {
+    "X-Gitlab-Event": "Merge Request Hook"
+  },
+  "payload": {
+    "object_kind": "merge_request",
+    "event_type": "merge_request",
+    "user": {
+      "name": "Daniel Mican",
+      "username": "dm03514",
+      "avatar_url": "https://secure.gravatar.com/avatar/0f9d5953607841d6a50b843a1107e51e?s=80&d=identicon"
+    },
+    "project": {
+      "id": 15119184,
+      "name": "test-project",
+      "description": "",
+      "web_url": "https://gitlab.com/dm03514/test-project",
+      "avatar_url": null,
+      "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+      "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+      "namespace": "Daniel Mican",
+      "visibility_level": 0,
+      "path_with_namespace": "dm03514/test-project",
+      "default_branch": "master",
+      "ci_config_path": null,
+      "homepage": "https://gitlab.com/dm03514/test-project",
+      "url": "git@gitlab.com:dm03514/test-project.git",
+      "ssh_url": "git@gitlab.com:dm03514/test-project.git",
+      "http_url": "https://gitlab.com/dm03514/test-project.git"
+    },
+    "object_attributes": {
+      "assignee_id": null,
+      "author_id": 4890303,
+      "created_at": "2019-11-20 00:13:38 UTC",
+      "description": "",
+      "head_pipeline_id": 96963426,
+      "id": 42624600,
+      "iid": 3,
+      "last_edited_at": null,
+      "last_edited_by_id": null,
+      "merge_commit_sha": null,
+      "merge_error": null,
+      "merge_params": {
+        "force_remove_source_branch": "1"
+      },
+      "merge_status": "can_be_merged",
+      "merge_user_id": null,
+      "merge_when_pipeline_succeeds": false,
+      "milestone_id": null,
+      "source_branch": "feature/test",
+      "source_project_id": 15119184,
+      "state": "closed",
+      "target_branch": "master",
+      "target_project_id": 15119184,
+      "time_estimate": 0,
+      "title": "Feature/test",
+      "updated_at": "2019-11-20 00:13:44 UTC",
+      "updated_by_id": null,
+      "url": "https://gitlab.com/dm03514/test-project/merge_requests/3",
+      "source": {
+        "id": 15119184,
+        "name": "test-project",
+        "description": "",
+        "web_url": "https://gitlab.com/dm03514/test-project",
+        "avatar_url": null,
+        "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+        "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+        "namespace": "Daniel Mican",
+        "visibility_level": 0,
+        "path_with_namespace": "dm03514/test-project",
+        "default_branch": "master",
+        "ci_config_path": null,
+        "homepage": "https://gitlab.com/dm03514/test-project",
+        "url": "git@gitlab.com:dm03514/test-project.git",
+        "ssh_url": "git@gitlab.com:dm03514/test-project.git",
+        "http_url": "https://gitlab.com/dm03514/test-project.git"
+      },
+      "target": {
+        "id": 15119184,
+        "name": "test-project",
+        "description": "",
+        "web_url": "https://gitlab.com/dm03514/test-project",
+        "avatar_url": null,
+        "git_ssh_url": "git@gitlab.com:dm03514/test-project.git",
+        "git_http_url": "https://gitlab.com/dm03514/test-project.git",
+        "namespace": "Daniel Mican",
+        "visibility_level": 0,
+        "path_with_namespace": "dm03514/test-project",
+        "default_branch": "master",
+        "ci_config_path": null,
+        "homepage": "https://gitlab.com/dm03514/test-project",
+        "url": "git@gitlab.com:dm03514/test-project.git",
+        "ssh_url": "git@gitlab.com:dm03514/test-project.git",
+        "http_url": "https://gitlab.com/dm03514/test-project.git"
+      },
+      "last_commit": {
+        "id": "304839c04c12d78a94b9b521c237c83ec84e826d",
+        "message": "another build\n",
+        "timestamp": "2019-11-09T17:34:18Z",
+        "url": "https://gitlab.com/dm03514/test-project/commit/304839c04c12d78a94b9b521c237c83ec84e826d",
+        "author": {
+          "name": "Daniel Mican",
+          "email": "dm03514@gmail.com"
+        }
+      },
+      "work_in_progress": false,
+      "total_time_spent": 0,
+      "human_total_time_spent": null,
+      "human_time_estimate": null,
+      "assignee_ids": [
+
+      ],
+      "action": "close"
+    },
+    "labels": [
+
+    ],
+    "changes": {
+      "state": {
+        "previous": "opened",
+        "current": "closed"
+      },
+      "updated_at": {
+        "previous": "2019-11-20 00:13:38 UTC",
+        "current": "2019-11-20 00:13:44 UTC"
+      },
+      "total_time_spent": {
+        "previous": null,
+        "current": 0
+      }
+    },
+    "repository": {
+      "name": "test-project",
+      "url": "git@gitlab.com:dm03514/test-project.git",
+      "description": "",
+      "homepage": "https://gitlab.com/dm03514/test-project"
+    }
+  }
+}

@@ -48,6 +48,6 @@ test-service-events:
 	go test \
 		-run TestService \
 		-tags=service \
-		./eventsources/... -count=1
+		./eventsources/... -count=1 -p 1
 
 .PHONY: test-unit start-stack fmt

@@ -101,10 +101,10 @@ func TestServiceEvent_Github(t *testing.T) {
 	for _, tt := range eventTests {
 		t.Run(tt.Name, func(t *testing.T) {
 			// reset the tracer
-			resp1, err := http.Get(baseURL + "/mocktracer/reset")
+			resp, err := http.Get(baseURL + "/mocktracer/reset")
 			assert.NoError(t, err)
-			defer resp1.Body.Close()
-			assert.Equal(t, http.StatusOK, resp1.StatusCode)
+			resp.Body.Close()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 			eventPaths := []string{
 				tt.StartEventPath,
@@ -130,13 +130,14 @@ func TestServiceEvent_Github(t *testing.T) {
 
 			spansResp, err := http.Get(baseURL + "/mocktracer/finished-spans")
 			assert.NoError(t, err)
-			defer spansResp.Body.Close()
-			assert.Equal(t, http.StatusOK, spansResp.StatusCode)
-
-			var spans []tracers.TestSpan
 
 			bs, err := ioutil.ReadAll(spansResp.Body)
 			assert.NoError(t, err)
+			spansResp.Body.Close()
+
+			assert.Equal(t, http.StatusOK, spansResp.StatusCode)
+
+			var spans []tracers.TestSpan
 
 			err = json.Unmarshal(bs, &spans)
 			assert.NoError(t, err)

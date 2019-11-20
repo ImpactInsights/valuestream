@@ -94,6 +94,96 @@ var eventTests = []struct {
 			"error":                       false,
 		},
 	},
+	{
+		Name:                  "issue_opened_closed",
+		StartEventPath:        "fixtures/events/issue/opened.json",
+		EndEventPath:          "fixtures/events/issue/closed.json",
+		ExpectedOperationName: "issue",
+		ExpectedTags: map[string]interface{}{
+			"issue.id":                    float64(2.7240837e+07),
+			"scm.repository.visibility":   "",
+			"scm.repository.full_name":    "",
+			"scm.repository.url":          "git@gitlab.com:dm03514/test-project.git",
+			"issue.branch_name":           "",
+			"issue.url":                   "https://gitlab.com/dm03514/test-project/issues/8",
+			"project.name":                "test-project",
+			"error":                       false,
+			"project.path_with_namespace": "dm03514/test-project",
+			"project.url":                 "git@gitlab.com:dm03514/test-project.git",
+			"scm.repository.name":         "",
+			"service":                     "gitlab",
+			"issue.number":                float64(8),
+			"project.namespace":           "Daniel Mican",
+			"project.visibility":          "",
+			"event.action":                "open",
+			"event.state":                 "opened",
+		},
+	},
+	{
+		Name:                  "issue_reopened_closed",
+		StartEventPath:        "fixtures/events/issue/reopened_opened.json",
+		EndEventPath:          "fixtures/events/issue/reopened_closed.json",
+		ExpectedOperationName: "issue",
+		ExpectedTags: map[string]interface{}{
+			"issue.id":                    float64(2.7240837e+07),
+			"scm.repository.visibility":   "",
+			"scm.repository.full_name":    "",
+			"scm.repository.url":          "git@gitlab.com:dm03514/test-project.git",
+			"issue.branch_name":           "",
+			"issue.url":                   "https://gitlab.com/dm03514/test-project/issues/8",
+			"project.name":                "test-project",
+			"error":                       false,
+			"project.path_with_namespace": "dm03514/test-project",
+			"project.url":                 "git@gitlab.com:dm03514/test-project.git",
+			"scm.repository.name":         "",
+			"service":                     "gitlab",
+			"issue.number":                float64(8),
+			"project.namespace":           "Daniel Mican",
+			"project.visibility":          "",
+			"event.action":                "reopen",
+			"event.state":                 "opened",
+		},
+	},
+	{
+		Name:                  "pull_request_opened_closed",
+		StartEventPath:        "fixtures/events/pull_request/opened.json",
+		EndEventPath:          "fixtures/events/pull_request/closed.json",
+		ExpectedOperationName: "pull_request",
+		ExpectedTags: map[string]interface{}{
+			"project.name":                "test-project",
+			"project.namespace":           "Daniel Mican",
+			"project.url":                 "https://gitlab.com/dm03514/test-project",
+			"pull_request.id":             float64(3),
+			"scm.target.label":            "master",
+			"service":                     "gitlab",
+			"error":                       false,
+			"event.action":                "open",
+			"event.state":                 "opened",
+			"project.path_with_namespace": "dm03514/test-project",
+			"project.visibility":          "",
+			"scm.base.label":              "feature/test",
+		},
+	},
+	{
+		Name:                  "pull_request_reopened_closed",
+		StartEventPath:        "fixtures/events/pull_request/reopened_opened.json",
+		EndEventPath:          "fixtures/events/pull_request/reopened_closed.json",
+		ExpectedOperationName: "pull_request",
+		ExpectedTags: map[string]interface{}{
+			"project.name":                "test-project",
+			"project.namespace":           "Daniel Mican",
+			"project.url":                 "https://gitlab.com/dm03514/test-project",
+			"pull_request.id":             float64(3),
+			"scm.target.label":            "master",
+			"service":                     "gitlab",
+			"error":                       false,
+			"event.action":                "reopen",
+			"event.state":                 "opened",
+			"project.path_with_namespace": "dm03514/test-project",
+			"project.visibility":          "",
+			"scm.base.label":              "feature/test",
+		},
+	},
 }
 
 func TestServiceEvent_Gitlab(t *testing.T) {
@@ -135,14 +225,11 @@ func TestServiceEvent_Gitlab(t *testing.T) {
 
 			spansResp, err := http.Get(baseURL + "/mocktracer/finished-spans")
 			assert.NoError(t, err)
+			assert.Equal(t, http.StatusOK, spansResp.StatusCode)
 
 			bs, err := ioutil.ReadAll(spansResp.Body)
 			assert.NoError(t, err)
 			spansResp.Body.Close()
-
-			fmt.Println(string(bs))
-
-			assert.Equal(t, http.StatusOK, spansResp.StatusCode)
 
 			var spans []tracers.TestSpan
 
