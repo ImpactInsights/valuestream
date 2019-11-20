@@ -251,7 +251,7 @@ func main() {
 	r.Handle("/metrics", promhttp.Handler())
 
 	if *tracerImplName == "mock" {
-		if err := tracers.Register(globalTracer, r); err != nil {
+		if err := tracers.Register(globalTracer, spans, r); err != nil {
 			panic(err)
 		}
 	}

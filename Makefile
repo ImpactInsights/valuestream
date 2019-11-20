@@ -1,4 +1,8 @@
 PKGS = $(shell go list ./... | grep -v /vendor/)
+TEST_EVENTS_CUSTOM_HTTP_PATH ?= "/customhttp"
+TEST_EVENTS_JENKINS_PATH ?= "/jenkins"
+TEST_EVENTS_GITHUB_PATH ?= "/github"
+TEST_EVENTS_GITLAB_PATH ?= "/gitlab"
 
 test-unit:
 	GO111MODULE=on go test -tags=unit -coverprofile=coverage.out $(PKGS)
@@ -23,7 +27,7 @@ start-valuestream-local:
 start-valuestream-service-test:
 	GO111MODULE=on \
 	VS_LOG_LEVEL=debug \
-	go run main.go -addr=:7777 -tracer=mock
+	go run main.go -addr=:7778 -tracer=mock
 
 test-service-github-jenkins:
 	GO111MODULE=on \
@@ -36,10 +40,11 @@ test-service-github-ci-build-jenkins:
 		go test -run TestGithubJenkinsPRBuildJenkinsDeployTrace ./traces/trace_service_test.go -v -count=1
 
 test-service-events:
-	TEST_EVENTS_CUSTOM_HTTP_PATH=/customhttp \
-	TEST_EVENTS_JENKINS_PATH=/jenkins \
-	TEST_EVENTS_GITHUB_PATH=/github \
-	TEST_EVENTS_URL=http://localhost:7777 \
+	TEST_EVENTS_CUSTOM_HTTP_PATH=$(TEST_EVENTS_CUSTOM_HTTP_PATH) \
+	TEST_EVENTS_JENKINS_PATH=$(TEST_EVENTS_JENKINS_PATH) \
+	TEST_EVENTS_GITHUB_PATH=$(TEST_EVENTS_GITHUB_PATH) \
+	TEST_EVENTS_GITLAB_PATH=$(TEST_EVENTS_GITLAB_PATH) \
+	TEST_EVENTS_URL=http://localhost:7778 \
 	go test \
 		-run TestService \
 		-tags=service \

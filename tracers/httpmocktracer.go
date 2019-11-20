@@ -2,6 +2,7 @@ package tracers
 
 import (
 	"encoding/json"
+	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"net/http"
@@ -9,7 +10,8 @@ import (
 
 // HTTPMockTracer exposes mock tracer methods over HTTP
 type HTTPMockTracer struct {
-	tracer *mocktracer.MockTracer
+	tracer    *mocktracer.MockTracer
+	spanStore traces.SpanStore
 }
 
 type TestSpan struct {
@@ -19,6 +21,10 @@ type TestSpan struct {
 
 func (h *HTTPMockTracer) Reset(w http.ResponseWriter, r *http.Request) {
 	h.tracer.Reset()
+	if err := h.spanStore.(*traces.BufferedSpans).DeleteAll(r.Context()); err != nil {
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
 	w.Write([]byte("success"))
 }
 
@@ -43,9 +49,10 @@ func (h *HTTPMockTracer) FinishedSpans(w http.ResponseWriter, r *http.Request) {
 	w.Write(bs)
 }
 
-func Register(tracer *mocktracer.MockTracer, r *mux.Router) error {
+func Register(tracer *mocktracer.MockTracer, ss traces.SpanStore, r *mux.Router) error {
 	h := &HTTPMockTracer{
-		tracer: tracer,
+		tracer:    tracer,
+		spanStore: ss,
 	}
 	r.HandleFunc("/mocktracer/reset", h.Reset)
 	r.HandleFunc("/mocktracer/finished-spans", h.FinishedSpans)
