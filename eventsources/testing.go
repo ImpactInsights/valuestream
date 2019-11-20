@@ -1,8 +1,11 @@
 package eventsources
 
 import (
+	"encoding/json"
 	"github.com/opentracing/opentracing-go"
+	"io/ioutil"
 	"net/http"
+	"os"
 )
 
 type StubEventSource struct {
@@ -64,4 +67,30 @@ func (s StubEvent) TraceID() (*string, error) {
 }
 func (s StubEvent) Tags() (map[string]interface{}, error) {
 	return s.TagsReturn, s.TagsReturnError
+}
+
+type TestEvent struct {
+	Headers map[string]string
+	Payload interface{}
+}
+
+func NewTestEventFromFixturePath(path string) (*TestEvent, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	bs, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
+	var te TestEvent
+
+	if err = json.Unmarshal(bs, &te); err != nil {
+		return nil, err
+	}
+
+	return &te, nil
 }

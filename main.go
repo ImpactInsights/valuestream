@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -90,6 +91,7 @@ func main() {
 	var jenkinsTracer opentracing.Tracer
 	var customHTTPTracer opentracing.Tracer
 	var gitlabTracer opentracing.Tracer
+	globalTracer := mocktracer.New()
 
 	switch *tracerImplName {
 	case "jaeger":
@@ -110,6 +112,11 @@ func main() {
 
 		gitlabTracer, gitlabTracerCloser = tracers.InitJaeger("gitlab")
 		defer gitlabTracerCloser.Close()
+	case "mock":
+		githubTracer = globalTracer
+		jenkinsTracer = globalTracer
+		customHTTPTracer = globalTracer
+		gitlabTracer = globalTracer
 
 	case "lightstep":
 		log.Infof("initializing tracer: lightstep")
@@ -242,6 +249,12 @@ func main() {
 	)
 
 	r.Handle("/metrics", promhttp.Handler())
+
+	if *tracerImplName == "mock" {
+		if err := tracers.Register(globalTracer, spans, r); err != nil {
+			panic(err)
+		}
+	}
 
 	loggedRouter := handlers.LoggingHandler(os.Stdout, r)
 

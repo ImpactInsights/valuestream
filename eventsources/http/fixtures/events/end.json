@@ -1,0 +1,9 @@
+{
+  "payload": {
+    "id": "1",
+    "action": "end",
+    "error": false,
+    "namespace": "myproj",
+    "type": "deploy"
+  }
+}

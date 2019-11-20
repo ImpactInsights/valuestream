@@ -70,6 +70,8 @@ func (ie IssueEvent) Tags() (map[string]interface{}, error) {
 	tags["project.path_with_namespace"] = ie.Project.PathWithNamespace
 	tags["project.url"] = ie.Project.URL
 	tags["project.visibility"] = ie.Project.Visibility
+	tags["event.state"] = ie.ObjectAttributes.State
+	tags["event.action"] = ie.ObjectAttributes.Action
 
 	if ie.Repository != nil {
 		tags["scm.repository.url"] = ie.Repository.URL
@@ -141,12 +143,20 @@ func (me MergeEvent) ParentSpanID() (*string, error) {
 		return nil, err
 	}
 	log.Debugf("MergeEvent.ParentSpanID() matches %+v", matches)
+
+	if len(matches) == 0 {
+		return nil, nil
+	}
+
 	return &matches[0], nil
 }
 
 func (me MergeEvent) Tags() (map[string]interface{}, error) {
 	tags := make(map[string]interface{})
 	tags["service"] = sourceName
+
+	tags["event.state"] = me.ObjectAttributes.State
+	tags["event.action"] = me.ObjectAttributes.Action
 
 	tags["project.name"] = me.Project.Name
 	tags["project.namespace"] = me.Project.Namespace

@@ -144,6 +144,13 @@ func (s *BufferedSpans) Count() (int, error) {
 	return len(s.spans), nil
 }
 
+func (s *BufferedSpans) DeleteAll(ctx context.Context) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.spans = make(map[string]StoreEntry)
+	return nil
+}
+
 func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, name string) {
 	ticker := time.NewTicker(interval)
 	for {

@@ -73,8 +73,8 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 
 	if e, err = wh.EventSource.Event(r, payload); err != nil {
 		log.WithFields(log.Fields{
-			"error":   err.Error(),
-			"payload": payload,
+			"error": err.Error(),
+			"event": e,
 		}).Errorf("unable to convert payload to event")
 		http.Error(w, "error", http.StatusBadRequest)
 		return
@@ -83,8 +83,8 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	tracer, closer, err := wh.Tracers.RequestScoped(r, wh.EventSource)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error":   err.Error(),
-			"payload": payload,
+			"error": err.Error(),
+			"event": e,
 		}).Errorf("error getting tracer from request")
 		http.Error(w, "error", http.StatusBadRequest)
 		return
@@ -93,9 +93,8 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 
 	if err := wh.handleEvent(r.Context(), tracer, e); err != nil {
 		log.WithFields(log.Fields{
-			"error":   err.Error(),
-			"payload": payload,
-			"event":   e,
+			"error": err.Error(),
+			"event": e,
 		}).Errorf("error processinng event")
 		http.Error(w, "error", http.StatusBadRequest)
 		return
