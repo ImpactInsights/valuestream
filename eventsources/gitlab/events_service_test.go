@@ -184,6 +184,70 @@ var eventTests = []struct {
 			"scm.base.label":              "feature/test",
 		},
 	},
+	{
+		Name:                  "build_created_running",
+		StartEventPath:        "fixtures/events/build/created.json",
+		EndEventPath:          "fixtures/events/build/running.json",
+		ExpectedOperationName: "build",
+		ExpectedTags: map[string]interface{}{
+			"build.project.id":       float64(1.5119184e+07),
+			"event.state":            "created",
+			"scm.commit.id":          float64(9.7138643e+07),
+			"vstrace.parent.id":      "vstrace-gitlab-build-test-project-97138643",
+			"vstrace.span.id":        "vstrace-gitlab-build-Daniel Mican / test-project-355621877",
+			"build.allow_failure":    false,
+			"build.name":             "install_dependencies",
+			"build.sha":              "304839c04c12d78a94b9b521c237c83ec84e826d",
+			"build.status":           "created",
+			"error":                  false,
+			"build.project.name":     "Daniel Mican / test-project",
+			"build.stage":            "build",
+			"scm.commit.author.name": "Daniel Mican",
+			"scm.commit.sha":         "304839c04c12d78a94b9b521c237c83ec84e826d",
+			"scm.commit.status":      "created",
+			"service":                "gitlab",
+			"user.name":              "Daniel Mican",
+			"vstrace.state":          "start",
+			"build.id":               float64(3.55621877e+08),
+			"build.je.ore_sha":       "0000000000000000000000000000000000000000",
+			"build.kind":             "build",
+			"build.ref":              "feature/test",
+			"build.tag":              false,
+			"user.id":                float64(4.890303e+06),
+		},
+	},
+	{
+		Name:                  "build_running_success",
+		StartEventPath:        "fixtures/events/build/running.json",
+		EndEventPath:          "fixtures/events/build/success.json",
+		ExpectedOperationName: "build",
+		ExpectedTags: map[string]interface{}{
+			"build.project.id":       float64(1.5119184e+07),
+			"event.state":            "running",
+			"scm.commit.id":          float64(9.7138643e+07),
+			"vstrace.parent.id":      "vstrace-gitlab-build-test-project-97138643",
+			"vstrace.span.id":        "vstrace-gitlab-build-Daniel Mican / test-project-355621877",
+			"build.allow_failure":    false,
+			"build.name":             "install_dependencies",
+			"build.sha":              "304839c04c12d78a94b9b521c237c83ec84e826d",
+			"build.status":           "running",
+			"error":                  false,
+			"build.project.name":     "Daniel Mican / test-project",
+			"build.stage":            "build",
+			"scm.commit.author.name": "Daniel Mican",
+			"scm.commit.sha":         "304839c04c12d78a94b9b521c237c83ec84e826d",
+			"scm.commit.status":      "pending",
+			"service":                "gitlab",
+			"user.name":              "Daniel Mican",
+			"vstrace.state":          "transition",
+			"build.id":               float64(3.55621877e+08),
+			"build.je.ore_sha":       "0000000000000000000000000000000000000000",
+			"build.kind":             "build",
+			"build.ref":              "feature/test",
+			"build.tag":              false,
+			"user.id":                float64(4.890303e+06),
+		},
+	},
 }
 
 func TestServiceEvent_Gitlab(t *testing.T) {
@@ -237,7 +301,7 @@ func TestServiceEvent_Gitlab(t *testing.T) {
 			assert.NoError(t, err)
 
 			for k, v := range spans[0].Tags {
-				fmt.Printf("%q:%q\n", k, v)
+				fmt.Printf("%q:%q,\n", k, v)
 			}
 
 			assert.Equal(t, 1, len(spans))

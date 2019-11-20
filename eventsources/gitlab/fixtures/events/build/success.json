@@ -1,4 +1,7 @@
 {
+  "headers": {
+    "X-Gitlab-Event": "Job Hook"
+  },
   "payload": {
     "object_kind": "build",
     "ref": "feature/test",
