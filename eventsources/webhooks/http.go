@@ -22,14 +22,12 @@ type Tracers interface {
 func New(
 	es eventsources.EventSource,
 	tracers Tracers,
-	sk []byte,
 	spans traces.SpanStore,
 ) (*Webhook, error) {
 
 	return &Webhook{
 		EventSource: es,
 		Tracers:     tracers,
-		SecretKey:   sk,
 		Spans:       spans,
 	}, nil
 }
@@ -44,7 +42,7 @@ type Webhook struct {
 // secretKey inspects the request for a contexted define key
 // and then falls back to a webhook instance defined key.
 func (wh Webhook) secretKey(r *http.Request) []byte {
-	sk := wh.SecretKey
+	sk := wh.EventSource.SecretKey()
 	k := r.Context().Value(CtxSecretTokenKey)
 	v, ok := k.([]byte)
 	if ok && v != nil {

@@ -2,24 +2,20 @@ package main
 
 import (
 	"context"
-	"flag"
+	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/github"
-	gitlab2 "github.com/ImpactInsights/valuestream/eventsources/gitlab"
-	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
-	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
-	"github.com/ImpactInsights/valuestream/eventsources/jiracloud"
+	"github.com/ImpactInsights/valuestream/eventsources/gitlab"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/tracers"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"io"
+	"github.com/urfave/cli"
 	"net/http"
 	"os"
 	"os/signal"
@@ -83,6 +79,130 @@ func init() {
 }
 
 func main() {
+	app := cli.NewApp()
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:   "addr",
+			Value:  "127.0.0.1:5000",
+			Usage:  "address to start valuestream server",
+			EnvVar: "VS_ADDR",
+		},
+		cli.StringFlag{
+			Name:   "tracer, t",
+			Value:  "logging",
+			Usage:  "tracer implementation to use: 'logger|jaeger|lightstep'",
+			EnvVar: "VS_TRACER_BACKEND",
+		},
+		cli.StringFlag{
+			Name:   "tracer-access-token",
+			Value:  "",
+			Usage:  "Tracer access token",
+			EnvVar: "VS_TRACER_ACCESS_TOKEN",
+		},
+	}
+	app.Action = func(c *cli.Context) error {
+		ctx := context.Background()
+		// get the tracer
+		initialzeTracer := tracers.InitializerFromCLI(c, c.String("tracer"))
+
+		sources := []struct {
+			urlPath    string
+			tracerName string
+			builderFn  func(*cli.Context, opentracing.Tracer) (eventsources.EventSource, error)
+		}{
+			{
+				urlPath:    "/github",
+				tracerName: "github",
+				builderFn:  github.NewFromCLI,
+			},
+			{
+				urlPath:    "/gitlab",
+				tracerName: "gitlab",
+				builderFn:  gitlab.NewFromCLI,
+			},
+		}
+
+		r := mux.NewRouter()
+
+		spans, err := traces.NewBufferedSpanStore(1000)
+		if err != nil {
+			return err
+		}
+
+		for _, s := range sources {
+			log.Infof("initializing source: %q", s.tracerName)
+
+			tracer, closer, err := initialzeTracer(ctx, s.tracerName)
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+				if err := closer.Close(); err != nil {
+					panic(err)
+				}
+			}()
+
+			source, err := s.builderFn(c, tracer)
+			if err != nil {
+				return err
+			}
+			webhook, err := webhooks.New(
+				source,
+				tracers.NewRequestScopedUsingSources(),
+				spans,
+			)
+
+			r.Handle(s.urlPath,
+				promhttp.InstrumentHandlerDuration(
+					duration.MustCurryWith(prometheus.Labels{"handler": source.Name()}),
+					promhttp.InstrumentHandlerCounter(counter,
+						promhttp.InstrumentHandlerResponseSize(responseSize,
+							http.HandlerFunc(webhook.Handler),
+						),
+					),
+				),
+			)
+		}
+
+		if c.String("tracer") == "mock" {
+			tracer, _, err := initialzeTracer(ctx, "global")
+			if err != nil {
+				return err
+			}
+
+			if err := tracers.Register(tracer.(*mocktracer.MockTracer), spans, r); err != nil {
+				return err
+			}
+		}
+
+		loggedRouter := handlers.LoggingHandler(os.Stdout, r)
+
+		srv := &http.Server{
+			Handler:      loggedRouter,
+			Addr:         c.String("addr"),
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+		}
+
+		go func() {
+			log.Infof("Starting Server: %q", c.String("addr"))
+			if err := srv.ListenAndServe(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		waitForShutdown(srv)
+
+		return nil
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	/*
+
 	var addr = flag.String("addr", "127.0.0.1:5000", "addr/port for the tes")
 	var tracerImplName = flag.String("tracer", "logging", "tracer implementation to use: 'logger|jaeger|lightstep'")
 	flag.Parse()
@@ -96,23 +216,6 @@ func main() {
 
 	globalTracer := mocktracer.New()
 
-	/*
-		for _, source := range source {
-			tracer, closer := Tracer(name)
-			defer closer.Close() // close on main function
-			source, err := source.New()
-			if err != nil  {
-				return err
-			}
-
-			webhook, err := NewWebhook(c *cli.Context)
-			if err != nil  {
-				return err
-			}
-
-			r.Handle(...)
-		}
-	*/
 
 	switch *tracerImplName {
 	case "jaeger":
@@ -332,6 +435,7 @@ func main() {
 	}()
 
 	waitForShutdown(srv)
+	*/
 }
 
 func waitForShutdown(srv *http.Server) {
