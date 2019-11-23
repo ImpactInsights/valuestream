@@ -35,7 +35,6 @@ func (s *Source) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, err
 
 func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var e Event
-	fmt.Println(string(payload))
 	if err := json.Unmarshal(payload, &e); err != nil {
 		return nil, err
 	}
