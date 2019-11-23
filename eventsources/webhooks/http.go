@@ -205,6 +205,7 @@ func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e
 	}
 
 	state, err := e.State(prevState)
+
 	log.WithFields(log.Fields{
 		"state": state,
 		"error": err,
