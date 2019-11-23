@@ -1,0 +1,17 @@
+{
+  "headers": {},
+  "payload": {
+    "timestamp":1574442795231,
+    "webhookEvent":"sprint_started",
+    "sprint":{
+      "id":1,
+      "self":"https://operationalanalytics.atlassian.net/rest/agile/1.0/sprint/1",
+      "state":"active",
+      "name":"TS Sprint 1",
+      "startDate":"2019-11-22T17:13:15.221Z",
+      "endDate":"2019-12-06T17:13:00.000Z",
+      "originBoardId":2,
+      "goal":""
+    }
+  }
+}

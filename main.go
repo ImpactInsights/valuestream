@@ -7,6 +7,7 @@ import (
 	gitlab2 "github.com/ImpactInsights/valuestream/eventsources/gitlab"
 	customhttp "github.com/ImpactInsights/valuestream/eventsources/http"
 	"github.com/ImpactInsights/valuestream/eventsources/jenkins"
+	"github.com/ImpactInsights/valuestream/eventsources/jiracloud"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/ImpactInsights/valuestream/tracers"
 	"github.com/ImpactInsights/valuestream/traces"
@@ -91,7 +92,27 @@ func main() {
 	var jenkinsTracer opentracing.Tracer
 	var customHTTPTracer opentracing.Tracer
 	var gitlabTracer opentracing.Tracer
+	var jiraTracer opentracing.Tracer
+
 	globalTracer := mocktracer.New()
+
+	/*
+		for _, source := range source {
+			tracer, closer := Tracer(name)
+			defer closer.Close() // close on main function
+			source, err := source.New()
+			if err != nil  {
+				return err
+			}
+
+			webhook, err := NewWebhook(c *cli.Context)
+			if err != nil  {
+				return err
+			}
+
+			r.Handle(...)
+		}
+	*/
 
 	switch *tracerImplName {
 	case "jaeger":
@@ -99,6 +120,7 @@ func main() {
 		var jenkinsTracerCloser io.Closer
 		var customHTTPTracerCloser io.Closer
 		var gitlabTracerCloser io.Closer
+		var jiraTracerCloser io.Closer
 
 		log.Infof("initializing tracer: jaeger")
 		githubTracer, githubTracerCloser = tracers.InitJaeger("github")
@@ -112,11 +134,16 @@ func main() {
 
 		gitlabTracer, gitlabTracerCloser = tracers.InitJaeger("gitlab")
 		defer gitlabTracerCloser.Close()
+
+		jiraTracer, jiraTracerCloser = tracers.InitJaeger("jira")
+		defer jiraTracerCloser.Close()
+
 	case "mock":
 		githubTracer = globalTracer
 		jenkinsTracer = globalTracer
 		customHTTPTracer = globalTracer
 		gitlabTracer = globalTracer
+		jiraTracer = globalTracer
 
 	case "lightstep":
 		log.Infof("initializing tracer: lightstep")
@@ -126,11 +153,13 @@ func main() {
 		jenkinsTracer = tracers.InitLightstep("jenkins", accessToken)
 		customHTTPTracer = tracers.InitLightstep("custom_http", accessToken)
 		gitlabTracer = tracers.InitLightstep("gitlab", accessToken)
+		jiraTracer = tracers.InitLightstep("jira", accessToken)
 
 		defer lightstep.Close(ctx, githubTracer)
 		defer lightstep.Close(ctx, jenkinsTracer)
 		defer lightstep.Close(ctx, customHTTPTracer)
 		defer lightstep.Close(ctx, gitlabTracer)
+		defer lightstep.Close(ctx, jiraTracer)
 
 	default:
 		log.Infof("initializing tracer: logging")
@@ -138,6 +167,7 @@ func main() {
 		jenkinsTracer = tracers.LoggingTracer{}
 		customHTTPTracer = tracers.LoggingTracer{}
 		gitlabTracer = tracers.LoggingTracer{}
+		jiraTracer = tracers.LoggingTracer{}
 	}
 
 	spans, err := traces.NewBufferedSpanStore(1000)
@@ -192,6 +222,24 @@ func main() {
 		nil,
 		spans,
 	)
+	if err != nil {
+		panic(err)
+	}
+
+	jira, err := jiracloud.NewSource(jiraTracer)
+	if err != nil {
+		panic(err)
+	}
+
+	jiraWebhook, err := webhooks.New(
+		jira,
+		tracers.NewRequestScopedUsingSources(),
+		nil,
+		spans,
+	)
+	if err != nil {
+		panic(err)
+	}
 
 	gitlab, err := gitlab2.NewSource(gitlabTracer)
 
@@ -243,6 +291,17 @@ func main() {
 			promhttp.InstrumentHandlerCounter(counter,
 				promhttp.InstrumentHandlerResponseSize(responseSize,
 					http.HandlerFunc(gitlabWebhook.Handler),
+				),
+			),
+		),
+	)
+
+	r.Handle("/jira",
+		promhttp.InstrumentHandlerDuration(
+			duration.MustCurryWith(prometheus.Labels{"handler": "jira"}),
+			promhttp.InstrumentHandlerCounter(counter,
+				promhttp.InstrumentHandlerResponseSize(responseSize,
+					http.HandlerFunc(jiraWebhook.Handler),
 				),
 			),
 		),
