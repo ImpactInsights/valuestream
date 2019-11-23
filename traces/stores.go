@@ -106,6 +106,7 @@ type idSpan struct {
 // if there is then it inserts, if there is no free space
 // it returns an error.
 func (s *BufferedSpans) Set(ctx context.Context, id string, entry StoreEntry) error {
+	log.Debugf("BufferedSpans.Set(), id: %q", id)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -114,7 +115,6 @@ func (s *BufferedSpans) Set(ctx context.Context, id string, entry StoreEntry) er
 		return fmt.Errorf("maxAllowedSpans: %d reached", s.maxAllowedSpans)
 	}
 
-	log.Debugf("BufferedSpans.Set(), id: %q", id)
 	s.spans[id] = entry
 	return nil
 }
@@ -129,6 +129,7 @@ func (s *BufferedSpans) Delete(ctx context.Context, id string) error {
 }
 
 func (s *BufferedSpans) Get(ctx context.Context, tracer opentracing.Tracer, id string) (*StoreEntry, error) {
+	log.Debugf("BufferedSpans.Get(), id: %q", id)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	i, ok := s.spans[id]
