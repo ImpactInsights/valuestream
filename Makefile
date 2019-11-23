@@ -3,6 +3,7 @@ TEST_EVENTS_CUSTOM_HTTP_PATH ?= "/customhttp"
 TEST_EVENTS_JENKINS_PATH ?= "/jenkins"
 TEST_EVENTS_GITHUB_PATH ?= "/github"
 TEST_EVENTS_GITLAB_PATH ?= "/gitlab"
+TEST_EVENTS_JIRA_PATH ?= "/jira"
 
 test-unit:
 	GO111MODULE=on go test -tags=unit -coverprofile=coverage.out $(PKGS)
@@ -44,7 +45,9 @@ test-service-events:
 	TEST_EVENTS_JENKINS_PATH=$(TEST_EVENTS_JENKINS_PATH) \
 	TEST_EVENTS_GITHUB_PATH=$(TEST_EVENTS_GITHUB_PATH) \
 	TEST_EVENTS_GITLAB_PATH=$(TEST_EVENTS_GITLAB_PATH) \
+	TEST_EVENTS_JIRA_PATH=$(TEST_EVENTS_JIRA_PATH) \
 	TEST_EVENTS_URL=http://localhost:7778 \
+	VS_LOG_LEVEL=DEBUG \
 	go test \
 		-run TestService \
 		-tags=service \

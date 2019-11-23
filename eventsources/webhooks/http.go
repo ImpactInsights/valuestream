@@ -205,6 +205,10 @@ func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e
 	}
 
 	state, err := e.State(prevState)
+	log.WithFields(log.Fields{
+		"state": state,
+		"error": err,
+	}).Debug("webhooks.http.handleEvent event state")
 
 	if err != nil {
 		return err
