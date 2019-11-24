@@ -35,7 +35,6 @@ func New(
 type Webhook struct {
 	EventSource eventsources.EventSource
 	Tracers     Tracers
-	SecretKey   []byte
 	Spans       traces.SpanStore
 }
 

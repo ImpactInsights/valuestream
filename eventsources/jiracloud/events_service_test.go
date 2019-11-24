@@ -182,16 +182,11 @@ func TestServiceEvent_JiraCloud(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Equal(t, 1, len(spans))
-			fmt.Printf("%+v\n", spans)
 
-			/*
-				for k, v := range spans[0].Tags {
-					fmt.Printf("%q: %q,\n", k, v)
-				}
-			*/
-
-			assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
-			assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+			if len(spans) > 0 {
+				assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
+				assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+			}
 		})
 	}
 }
