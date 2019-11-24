@@ -8,6 +8,7 @@ import (
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/opentracing/opentracing-go"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"net/http"
 )
@@ -16,11 +17,11 @@ const (
 	sourceName string = "customhttp"
 )
 
-type EventSource struct {
+type Source struct {
 	tracer opentracing.Tracer
 }
 
-func (es *EventSource) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, error) {
+func (es *Source) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, error) {
 	var body []byte
 	var err error
 
@@ -41,22 +42,30 @@ func (es *EventSource) ValidatePayload(r *http.Request, secretKey []byte) ([]byt
 	return body, nil
 }
 
-func (es *EventSource) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
+func (es *Source) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var e Event
 	err := json.Unmarshal(payload, &e)
 	return e, err
 }
 
-func (es *EventSource) Tracer() opentracing.Tracer {
+func (es *Source) SecretKey() []byte {
+	return nil
+}
+
+func (es *Source) Tracer() opentracing.Tracer {
 	return es.tracer
 }
 
-func (es *EventSource) Name() string {
+func (es *Source) Name() string {
 	return "custom_http"
 }
 
-func NewSource(tracer opentracing.Tracer) (*EventSource, error) {
-	return &EventSource{
+func NewSource(tracer opentracing.Tracer) (eventsources.EventSource, error) {
+	return &Source{
 		tracer: tracer,
 	}, nil
+}
+
+func NewFromCLI(c *cli.Context, tracer opentracing.Tracer) (eventsources.EventSource, error) {
+	return NewSource(tracer)
 }

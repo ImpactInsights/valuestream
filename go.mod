@@ -23,6 +23,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/uber/jaeger-client-go v2.16.0+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
+	github.com/urfave/cli v1.22.2
 	github.com/xanzy/go-gitlab v0.22.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
