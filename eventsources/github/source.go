@@ -5,6 +5,7 @@ import (
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/google/go-github/github"
 	"github.com/opentracing/opentracing-go"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"net/http"
 )
@@ -51,8 +52,16 @@ func (s *Source) Event(r *http.Request, payload []byte) (eventsources.Event, err
 	return nil, err
 }
 
-func NewSource(tracer opentracing.Tracer) (*Source, error) {
+func (s *Source) SecretKey() []byte {
+	return nil
+}
+
+func NewSource(tracer opentracing.Tracer) (eventsources.EventSource, error) {
 	return &Source{
 		tracer: tracer,
 	}, nil
+}
+
+func NewFromCLI(c *cli.Context, tracer opentracing.Tracer) (eventsources.EventSource, error) {
+	return NewSource(tracer)
 }

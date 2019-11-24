@@ -16,32 +16,34 @@ import (
 func TestWebhook_secretKey(t *testing.T) {
 	testCases := []struct {
 		name         string
-		whSecretKey  []byte
+		source       eventsources.EventSource
 		ctxSecretKey []byte
 		expected     []byte
 	}{
 		{
 			"no_webhook_secret_no_request_secret",
-			nil,
+			eventsources.StubEventSource{SecretKeyReturn: nil},
 			nil,
 			nil,
 		},
 		{
 			"webhook_secret",
-			[]byte("webhook_secret"),
+			eventsources.StubEventSource{SecretKeyReturn: []byte("webhook_secret")},
 			nil,
 			[]byte("webhook_secret"),
 		},
 		{
 			"request_scoped_secret",
-			nil,
+			eventsources.StubEventSource{SecretKeyReturn: nil},
 			[]byte("webhook_secret"),
 			[]byte("webhook_secret"),
 		},
 	}
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			wh := Webhook{SecretKey: tt.whSecretKey}
+			wh := Webhook{
+				EventSource: tt.source,
+			}
 			req, err := http.NewRequest("GET", "/test", nil)
 			assert.NoError(t, err)
 

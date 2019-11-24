@@ -300,13 +300,11 @@ func TestServiceEvent_Gitlab(t *testing.T) {
 			err = json.Unmarshal(bs, &spans)
 			assert.NoError(t, err)
 
-			for k, v := range spans[0].Tags {
-				fmt.Printf("%q:%q,\n", k, v)
-			}
-
 			assert.Equal(t, 1, len(spans))
-			assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
-			assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+			if len(spans) == 1 {
+				assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
+				assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+			}
 		})
 	}
 }

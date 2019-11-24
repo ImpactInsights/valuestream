@@ -13,6 +13,7 @@ type StubEventSource struct {
 	NameReturn        string
 	EventFn           func(*http.Request, []byte) (Event, error)
 	TracerReturn      opentracing.Tracer
+	SecretKeyReturn   []byte
 }
 
 func (s StubEventSource) Name() string {
@@ -29,6 +30,10 @@ func (s StubEventSource) Event(r *http.Request, payload []byte) (Event, error) {
 
 func (s StubEventSource) Tracer() opentracing.Tracer {
 	return s.TracerReturn
+}
+
+func (s StubEventSource) SecretKey() []byte {
+	return s.SecretKeyReturn
 }
 
 type StubEvent struct {

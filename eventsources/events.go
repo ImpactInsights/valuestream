@@ -35,4 +35,5 @@ type EventSource interface {
 	ValidatePayload(r *http.Request, secretKey []byte) ([]byte, error)
 	Event(r *http.Request, payload []byte) (Event, error)
 	Tracer() opentracing.Tracer
+	SecretKey() []byte
 }

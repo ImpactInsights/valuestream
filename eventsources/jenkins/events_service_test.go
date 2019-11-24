@@ -142,8 +142,11 @@ func TestServiceEvent_Jenkins(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Equal(t, 1, len(spans))
-			assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
-			assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+
+			if len(spans) == 1 {
+				assert.Equal(t, tt.ExpectedOperationName, spans[0].Span.OperationName)
+				assert.Equal(t, tt.ExpectedTags, spans[0].Tags)
+			}
 		})
 	}
 }
