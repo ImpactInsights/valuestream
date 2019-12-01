@@ -59,6 +59,14 @@ func (e Event) Tags() (map[string]interface{}, error) {
 		tags[k] = v
 	}
 
-	tags["service"] = sourceName
+	tags[eventsources.SourceNameTag] = sourceName
+
+	sID, _ := e.SpanID()
+	tags[eventsources.SpanIDTag] = sID
+
+	if pID, _ := e.ParentSpanID(); pID != nil {
+		tags[eventsources.ParentSpanIDTag] = *pID
+	}
+
 	return tags, nil
 }

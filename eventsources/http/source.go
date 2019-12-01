@@ -8,6 +8,7 @@ import (
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/webhooks"
 	"github.com/opentracing/opentracing-go"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"net/http"
@@ -44,6 +45,7 @@ func (es *Source) ValidatePayload(r *http.Request, secretKey []byte) ([]byte, er
 
 func (es *Source) Event(r *http.Request, payload []byte) (eventsources.Event, error) {
 	var e Event
+	log.Debugf("raw event: %q", string(payload))
 	err := json.Unmarshal(payload, &e)
 	return e, err
 }
