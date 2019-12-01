@@ -47,10 +47,11 @@ var eventTests = []struct {
 		EndEventPath:          "fixtures/events/end.json",
 		ExpectedOperationName: "deploy",
 		ExpectedTags: map[string]interface{}{
-			"error":   false,
-			"service": "customhttp",
-			"key1":    "val1",
-			"key2":    "val2",
+			"error":          false,
+			"vs.source.name": "customhttp",
+			"vs.span.id":     "vstrace-customhttp-deploy-myproj-1",
+			"key1":           "val1",
+			"key2":           "val2",
 		},
 	},
 }
