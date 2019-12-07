@@ -76,6 +76,7 @@ Traces support drilling down into individual units or stages of work in order to
 ## Roadmap
 - OpenCensus Operational Metrics
 - OpenCensus DevOps Metrics Exporter 
+- Trace Strategy
 - Trello
 - Historical Data Import 
 
