@@ -2,8 +2,6 @@
   <img src="docs/static/valuestream.png">
 </p>
 
-One Service. One View. All your tools.
-
 [ValueStream](https://medium.com/@dm03514/valuestream-devops-metrics-observing-delivery-across-multiple-systems-7ae76a6e8deb) provides a centralized view into key DevOps delivery metrics: Issues, Pull Requests, Builds and Deploys. If you’ve ever wondered how long tickets are open, or how long deployments take or the success rate of deployments, or the duration of pull requests, ValueStream can help you.  ValueStream is a standalone HTTP service that listens for events (webhooks) from Github and Jenkins. ValueStream ships as a standalone service and using it is as easy as: 
 
 - Starting valuestream and point it to an opentracing compliant backend (jaeger, lightstep, datadog, etc)
