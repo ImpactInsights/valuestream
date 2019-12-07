@@ -27,19 +27,6 @@ Valuestream is able to provide a cross system view into software development.  T
   <img width="900px" src="docs/static/accelerate_dashboard.png">
 </p>
 
-## Traces
-
-The real power of value stream comes from being able to tie together all the Delivery events (Issue, PRs, Builds & Deploys) from different sources.  When events are connected it is called a "Trace".  The image below shows the example of all steps required in order to produce a valuestream feature:
-
-<p align="center">
-  <img width="1448" alt="Screen Shot 2019-07-14 at 5 34 52 PM" src="https://user-images.githubusercontent.com/53025024/61565404-ed77e100-aa46-11e9-89f7-56ba7ba694ad.png">
-</p>
-
-To generate traces ValueStream leverages the OpenTracing ecosystem.  This defines a structured conventions to connecting data from multiple systems and provides mature client libraries and a rich infrastructure ecosystem.  In order to use get the most out of ValueStream it must be pointed at an opentracing stack.  [Jaeger](https://github.com/jaegertracing/jaeger) (by uber) is the most popular open source stack and has 8500+ stars on github.  Local development of ValueStream is done using jaeger. Any other opentracing compliant stack can be used (Datadog, Lightstep, etc).  ValueStream uses [LightStep](https://lightstep.com/) in production for development of ValueStream. 
-
-Traces support drilling down into individual units or stages of work in order to see where time was spent in the delivery pipeline. This allows technical executives, managers, directors and VPs to debug software delivery in the same way an engineer debugs a distributed system, using datadriven hypothesis and measuring impact for each change. 
-
-
 
 # Quickstart (Sending Github Issue Data in 1 Minute!)
 
@@ -67,88 +54,30 @@ $ ~/ngrok http 5000
 
 - Start tracking issues and pull requests!
 
+## Traces
+
+The real power of value stream comes from being able to tie together all the Delivery events (Issue, PRs, Builds & Deploys) from different sources.  When events are connected it is called a "Trace".  The image below shows the example of all steps required in order to produce a valuestream feature:
+
+<p align="center">
+  <img width="1448" alt="Screen Shot 2019-07-14 at 5 34 52 PM" src="https://user-images.githubusercontent.com/53025024/61565404-ed77e100-aa46-11e9-89f7-56ba7ba694ad.png">
+</p>
+
+To generate traces ValueStream leverages the OpenTracing ecosystem.  This defines a structured conventions to connecting data from multiple systems and provides mature client libraries and a rich infrastructure ecosystem.  In order to use get the most out of ValueStream it must be pointed at an opentracing stack.  [Jaeger](https://github.com/jaegertracing/jaeger) (by uber) is the most popular open source stack and has 8500+ stars on github.  Local development of ValueStream is done using jaeger. Any other opentracing compliant stack can be used (Datadog, Lightstep, etc).  ValueStream uses [LightStep](https://lightstep.com/) in production for development of ValueStream. 
+
+Traces support drilling down into individual units or stages of work in order to see where time was spent in the delivery pipeline. This allows technical executives, managers, directors and VPs to debug software delivery in the same way an engineer debugs a distributed system, using datadriven hypothesis and measuring impact for each change. 
+
+
 ### Configuration
 - Logging Level - Environmental Variable - `VS_LOG_LEVEL`
 - Tracer Agent: CLI flag `-tracer=<<TRACER>>` which supports `logging|jaeger|lightstep`
 -- Both jaeger and lightstep require additional configuration using their exposed environmental variables for their go client
 
 ## Roadmap
-- Jira Webhook Integration is the next focus
-- Persistent span storage using Redis
+- Trello
+- OpenCensus Metrics Exporter 
 - Minimal Docker Image
 - CI 
-- Service Tests CI
 - Historical Data Import 
-- Gitlab Integration
-
-# Integration
-## Github
-## Jenkins
-
-
-# Traces
-In order to get the full value from ValueStream metrics need to be [connected in some way](https://opentracing.io/specification/#the-opentracing-data-model).  "Trace Propagation" is ValueStreams term for connencting these.  The supported relationships are visualized as:
-
-<p align="center">
-  <img width="300px" src="docs/static/span_relationships.png">
-</p>
-
-The following table shows the currently supported actions, which service they originate from, and how they are identified within traces. The chart below shows each action and how it's referenced by child actions.  The first is a github issue.  It can be referenced by a Pull Request or a build using the `TRACE_ID` of the form `vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}`.  
-
-| Integration Name | Type |  Referenced By | TRACE_ID | Internal Prefix |
-|:-----:|--------|--------| ----------| ----|
-|   Github    | Issue     | ISSUE_NUMBER | `vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}` | `Traces.ISSUE-vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}` |
-|   Github    | Pull Request      | BRANCH |  `git checkout -b  {{ BRANCH }}` | `Spans.{{ PULL_REQUEST_ID }}` |
-|   Jenkins    | Pull Request      | N/A | N/A  | `Spans.{{ PULL_REQUEST_ID }}` |
-
-
-The next chart shows how children nodes are able to reference their parent nodes.  The children node relationships are (PullRequest -> Issue), (Build -> PullRequest), and (Deploy -> Issue).  Listed below shows each pair is able to reference the other in order to form full traces:
-
-## Referencing Nodes
-
-### PullRequest -> Issue
-This can be used to track all code associated with a given ticket/issue.
-
-Produces:
-
-<p align="center">
-  <img width="700" src="https://user-images.githubusercontent.com/321963/61335859-02f9ca80-a7fd-11e9-9b58-bed7266a2f14.png">
-</p>
-
-The pull request branch needs to include the Issue `TRACE_ID` somewhere:
-
-```
-$ git checkout -b feature/vstrace-github-{{ REPO_NAME }}-{{ ISSUE_NUMBER }}/my-issue
-```
-<p align="center">
-  <img width="700" alt="Screen Shot 2019-07-11 at 4 50 36 PM" src="https://user-images.githubusercontent.com/321963/61084593-4b2f7c00-a3fc-11e9-8570-a5e9e2ee6ef2.png">
-</p>
-
-To reference the issue above from a pull request the branch name must include:
-
-```
-vstrace-github-valuestream-27
-```
-
-## Build -> PullRequest
-This relationship helps to capture all CI builds associated with a given pull request. The 
-
-<p align="center">
-  <img width="700px" src="docs/static/lightstep_pr_build_1.png">
-</p>
-
-
-## Deploy -> Issue
-
-This tracks deploys related to a specific issue.
-
-<p align="center">
-  <img width="700px" src="https://user-images.githubusercontent.com/53025024/61565413-f7014900-aa46-11e9-99d6-d42907c8fd54.png">
-</p>
-This relationship is established through jenkins build parameters.  The `TRACE_ID`of the issue needs to be present in the jenkins build params:
-
-<img width="700" alt="Screen Shot 2019-07-11 at 7 09 39 PM" src="https://user-images.githubusercontent.com/321963/61091311-b0d93380-a40f-11e9-82b8-bc1123165d71.png">
-
 
 
 
