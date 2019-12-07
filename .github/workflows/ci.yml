@@ -26,3 +26,11 @@ jobs:
 
     - name: Build
       run: go build -v .
+
+    - name: Fmt
+      run: make fmt
+
+    - name: unit-test
+      run: make test-unit
+      
+      
