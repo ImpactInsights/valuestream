@@ -53,4 +53,7 @@ test-service-events:
 		-tags=service \
 		./eventsources/... -count=1 -p 1
 
+docker-image:
+	docker build -f Dockerfile -t valuestream .
+
 .PHONY: test-unit start-stack fmt

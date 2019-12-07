@@ -1,4 +1,4 @@
-FROM golang:1.12
+FROM golang:1.13 as builder
 
 WORKDIR /go/src/github.com/ImpactInsights/valuestream
 COPY . .
@@ -6,10 +6,12 @@ COPY . .
 RUN GO111MODULE=on go get -d -v ./...
 RUN GO111MODULE=on go install -v ./...
 
-EXPOSE 5000
+FROM ubuntu
+
+COPY --from=builder /go/bin/valuestream /usr/local/bin
 
 RUN useradd -m vs
 USER vs
 
-CMD valuestream -addr=":"$PORT
+CMD valuestream
 
