@@ -15,19 +15,6 @@ ValueStream can help answer:
 - What's the deployment rate (per project, type, etc)?
 - What's the deployment success ratio (per project, type, etc)?
 
-# ValueStream In Action
-
-ValueStream aggregates data from multiple different system and stores it in a standardize data model based on opentracing specification.  Having a standard data model allows for drilling down into individual integrations (think looking at just github pull request metrics) as well as providing cross service view (Tracing delivery time across multiple systems).  
-
-## Devops Metrics
-
-Valuestream is able to provide a cross system view into software development.  The dashboard below shows the average lead time across all issues from all systems (currently only Github issues are supported). The magic of having a standardized data model enables the view below to seamlessly work for github issues, jira issues, trello issues, or any other system that supports webhooks.  To drive this home consider a company that has code in both Github and Gitlab.  ValueStream can provide the average pull request duration across both github and gitlab, as well as the average across just github or just gitlab.  It even supports drilling down further by providing the average pull request duration by repo across both github and gitlab.
-
-<p align="center">
-  <img width="900px" src="docs/static/accelerate_dashboard.png">
-</p>
-
-
 # Quickstart (Sending Github Issue Data in 1 Minute!)
 
 ValueStream can be started and submitting software metrics in minutes. [VIDEO QUICKSTART HERE](https://youtu.be/c7gD7WGqFxY) (video requires `docker-compose up -d`)
@@ -53,6 +40,20 @@ $ ~/ngrok http 5000
 - Point your github [webhook](https://developer.github.com/webhooks/) at `ngrok`
 
 - Start tracking issues and pull requests!
+
+
+# ValueStream In Action
+
+ValueStream aggregates data from multiple different system and stores it in a standardize data model based on opentracing specification.  Having a standard data model allows for drilling down into individual integrations (think looking at just github pull request metrics) as well as providing cross service view (Tracing delivery time across multiple systems).  
+
+## Devops Metrics
+
+Valuestream is able to provide a cross system view into software development.  The dashboard below shows the average lead time across all issues from all systems (currently only Github issues are supported). The magic of having a standardized data model enables the view below to seamlessly work for github issues, jira issues, trello issues, or any other system that supports webhooks.  To drive this home consider a company that has code in both Github and Gitlab.  ValueStream can provide the average pull request duration across both github and gitlab, as well as the average across just github or just gitlab.  It even supports drilling down further by providing the average pull request duration by repo across both github and gitlab.
+
+<p align="center">
+  <img width="900px" src="docs/static/accelerate_dashboard.png">
+</p>
+
 
 ## Traces
 
