@@ -74,10 +74,9 @@ Traces support drilling down into individual units or stages of work in order to
 -- Both jaeger and lightstep require additional configuration using their exposed environmental variables for their go client
 
 ## Roadmap
+- OpenCensus Operational Metrics
+- OpenCensus DevOps Metrics Exporter 
 - Trello
-- OpenCensus Metrics Exporter 
-- Minimal Docker Image
-- CI 
 - Historical Data Import 
 
 
