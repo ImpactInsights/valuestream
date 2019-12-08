@@ -67,13 +67,56 @@ To generate traces ValueStream leverages the OpenTracing ecosystem.  This define
 
 Traces support drilling down into individual units or stages of work in order to see where time was spent in the delivery pipeline. This allows technical executives, managers, directors and VPs to debug software delivery in the same way an engineer debugs a distributed system, using datadriven hypothesis and measuring impact for each change. 
 
+# Local Development
 
-### Configuration
+## Running Events Test Suite
+
+- Start ValueStream
+```
+$ make start-valuestream-events-test
+GO111MODULE=on \
+        VS_LOG_LEVEL=debug \
+        go run main.go -addr=:7778 -tracer=mock
+INFO[0000] building tracer initializer for: "mock"       source="init.go:61"
+{"level":"info","msg":"initializing source: \"github\"","time":"2019-12-08T07:11:12-05:00"}
+{"level":"info","msg":"initializing source: \"gitlab\"","time":"2019-12-08T07:11:12-05:00"}
+{"level":"info","msg":"initializing source: \"customhttp\"","time":"2019-12-08T07:11:12-05:00"}
+{"level":"info","msg":"initializing source: \"jenkins\"","time":"2019-12-08T07:11:12-05:00"}
+{"level":"info","msg":"initializing source: \"jira\"","time":"2019-12-08T07:11:12-05:00"}
+{"level":"info","msg":"Starting Server: \":7778\"","time":"2019-12-08T07:11:12-05:00"}
+```
+
+- Execute Test Suite
+```
+$ make test-service-events
+
+TEST_EVENTS_CUSTOM_HTTP_PATH="/customhttp" \
+        TEST_EVENTS_JENKINS_PATH="/jenkins" \
+        TEST_EVENTS_GITHUB_PATH="/github" \
+        TEST_EVENTS_GITLAB_PATH="/gitlab" \
+        TEST_EVENTS_JIRA_PATH="/jira" \
+        TEST_EVENTS_URL=http://localhost:7778 \
+        VS_LOG_LEVEL=DEBUG \
+        go test \
+                -run TestService \
+                -tags=service \
+                ./eventsources/... -count=1 -p 1
+?       github.com/ImpactInsights/valuestream/eventsources      [no test files]
+ok      github.com/ImpactInsights/valuestream/eventsources/github       0.103s
+ok      github.com/ImpactInsights/valuestream/eventsources/gitlab       0.121s
+ok      github.com/ImpactInsights/valuestream/eventsources/http 0.094s
+ok      github.com/ImpactInsights/valuestream/eventsources/jenkins      0.098s
+ok      github.com/ImpactInsights/valuestream/eventsources/jiracloud    0.115s
+?       github.com/ImpactInsights/valuestream/eventsources/types        [no test files]
+ok      github.com/ImpactInsights/valuestream/eventsources/webhooks     0.080s [no tests to run]
+```
+
+# Configuration
 - Logging Level - Environmental Variable - `VS_LOG_LEVEL`
 - Tracer Agent: CLI flag `-tracer=<<TRACER>>` which supports `logging|jaeger|lightstep`
 -- Both jaeger and lightstep require additional configuration using their exposed environmental variables for their go client
 
-## Roadmap
+# Roadmap
 - OpenCensus Operational Metrics
 - OpenCensus DevOps Metrics Exporter 
 - Trace Strategy
