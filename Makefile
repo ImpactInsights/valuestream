@@ -25,7 +25,7 @@ start-valuestream-local:
 	VS_LOG_LEVEL=debug \
 	go run main.go -addr=:5000 -tracer=jaeger
 
-start-valuestream-service-test:
+start-valuestream-events-test:
 	GO111MODULE=on \
 	VS_LOG_LEVEL=debug \
 	go run main.go -addr=:7778 -tracer=mock
