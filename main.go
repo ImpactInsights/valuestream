@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"contrib.go.opencensus.io/exporter/prometheus"
+	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/ImpactInsights/valuestream/eventsources/gitlab"
@@ -15,10 +17,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"go.opencensus.io/plugin/ochttp"
+	"go.opencensus.io/plugin/ochttp/propagation/b3"
+	"go.opencensus.io/plugin/runmetrics"
+	"go.opencensus.io/stats/view"
 	"net/http"
 	"os"
 	"os/signal"
@@ -27,36 +31,6 @@ import (
 )
 
 const envLogLevel string = "VS_LOG_LEVEL"
-
-var (
-	counter = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "api_requests_total",
-			Help: "A counter for requests to the wrapped handler.",
-		},
-		[]string{"code", "method"},
-	)
-
-	// duration is partitioned by the HTTP method and handler. It uses custom
-	// buckets based on the expected request duration.
-	duration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "request_duration_seconds",
-			Help:    "A histogram of latencies for requests.",
-			Buckets: []float64{.25, .5, 1, 2.5, 5, 10},
-		},
-		[]string{"handler", "method"},
-	)
-
-	responseSize = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "response_size_bytes",
-			Help:    "A histogram of response sizes for requests.",
-			Buckets: []float64{200, 500, 900, 1500},
-		},
-		[]string{},
-	)
-)
 
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
@@ -74,11 +48,6 @@ func init() {
 	default:
 		log.SetLevel(log.DebugLevel)
 	}
-
-	prometheus.MustRegister(
-		duration,
-		counter,
-	)
 }
 
 func main() {
@@ -107,6 +76,11 @@ func main() {
 		ctx := context.Background()
 		// get the tracer
 		initialzeTracer := tracers.InitializerFromCLI(c, c.String("tracer"))
+
+		spans, err := traces.NewBufferedSpanStore(1000)
+		if err != nil {
+			return err
+		}
 
 		sources := []struct {
 			urlPath   string
@@ -142,11 +116,6 @@ func main() {
 
 		r := mux.NewRouter()
 
-		spans, err := traces.NewBufferedSpanStore(1000)
-		if err != nil {
-			return err
-		}
-
 		for _, s := range sources {
 			log.Infof("initializing source: %q", s.name)
 
@@ -172,13 +141,9 @@ func main() {
 			)
 
 			r.Handle(s.urlPath,
-				promhttp.InstrumentHandlerDuration(
-					duration.MustCurryWith(prometheus.Labels{"handler": source.Name()}),
-					promhttp.InstrumentHandlerCounter(counter,
-						promhttp.InstrumentHandlerResponseSize(responseSize,
-							http.HandlerFunc(webhook.Handler),
-						),
-					),
+				ochttp.WithRouteTag(
+					http.HandlerFunc(webhook.Handler),
+					s.urlPath,
 				),
 			)
 		}
@@ -194,11 +159,43 @@ func main() {
 			}
 		}
 
-		r.Handle("/metrics", promhttp.Handler())
+		exporter, err := prometheus.NewExporter(prometheus.Options{
+			Namespace: "vs",
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to create the Prometheus exporter: %v", err)
+		}
+
+		r.Handle("/metrics", exporter)
+
+		if err := view.Register(
+			ochttp.ServerRequestCountView,
+			ochttp.ServerRequestBytesView,
+			ochttp.ServerResponseBytesView,
+			ochttp.ServerLatencyView,
+			ochttp.ServerRequestCountByMethod,
+			ochttp.ServerResponseCountByStatusCode,
+		); err != nil {
+			return fmt.Errorf("failed to register ochttp Server views: %v", err)
+		}
+
+		view.SetReportingPeriod(500 * time.Millisecond)
+
+		if err := runmetrics.Enable(runmetrics.RunMetricOptions{
+			EnableCPU:    true,
+			EnableMemory: true,
+		}); err != nil {
+			return err
+		}
+
 		loggedRouter := handlers.LoggingHandler(os.Stdout, r)
 
 		srv := &http.Server{
-			Handler:      loggedRouter,
+			Handler: &ochttp.Handler{
+				Handler:     loggedRouter,
+				Propagation: &b3.HTTPFormat{},
+			},
 			Addr:         c.String("addr"),
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,

@@ -3,6 +3,7 @@ module github.com/ImpactInsights/valuestream
 go 1.12
 
 require (
+	contrib.go.opencensus.io/exporter/prometheus v0.1.0
 	github.com/andygrunwald/go-jira v1.11.1
 	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
@@ -28,12 +29,11 @@ require (
 	github.com/urfave/cli v1.22.2
 	github.com/urfave/cli/v2 v2.0.0
 	github.com/xanzy/go-gitlab v0.22.0
+	go.opencensus.io v0.22.2
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
 	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
-	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/tools v0.0.0-20190719005602-e377ae9d6386 // indirect
-	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/grpc v1.22.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
