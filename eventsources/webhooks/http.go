@@ -7,12 +7,34 @@ import (
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"io"
 	"net/http"
 )
 
 const (
 	SignatureHeader = "X-VS-Signature"
+)
+
+var (
+	eventSource, _ = tag.NewKey("event_source")
+	eventType, _   = tag.NewKey("event_type")
+
+	EventStartCount = stats.Int64(
+		"webhooks/event/start_count",
+		"Number of events started",
+		stats.UnitDimensionless,
+	)
+
+	EventStartCountView = &view.View{
+		Name:        "webhooks/event/start_count",
+		Description: "Number of events started",
+		TagKeys:     []tag.Key{eventSource, eventType},
+		Measure:     EventStartCount,
+		Aggregation: view.Count(),
+	}
 )
 
 type Tracers interface {
@@ -101,6 +123,16 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+	ctx, err := tag.New(ctx,
+		tag.Insert(eventSource, wh.EventSource.Name()),
+		tag.Insert(eventType, e.OperationName()),
+	)
+	if err != nil {
+		return err
+	}
+
+	stats.Record(ctx, EventStartCount.M(1))
+
 	// check to see if this event has a parent span
 	parentID, err := e.ParentSpanID()
 	if err != nil {
