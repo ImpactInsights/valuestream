@@ -19,7 +19,7 @@ ValueStream can help answer:
 
 ValueStream can be started and submitting software metrics in minutes. [VIDEO QUICKSTART HERE](https://youtu.be/c7gD7WGqFxY) (video requires `docker-compose up -d`)
 
-- Start ValueStream Docker Stack
+- Start ValueStream Docker Stack (or using [Docker image](https://hub.docker.com/repository/docker/impactinsights/valuestream) directly)
 ```
 $ docker-compose up -d
 ```
