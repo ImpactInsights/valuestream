@@ -7,12 +7,11 @@
 - Starting valuestream and point it to an opentracing compliant backend (jaeger, lightstep, datadog, etc)
 - Configuring a supported [Event Source's](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources) webhooks to point to ValueStream
 
-
+Features:
 - [Supported Event Types](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types)
 - [Supported Event Sources](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources)
 
 ValueStream can help answer:
-
 - What's the deployment rate (per project, type, etc)?
 - What's the deployment success ratio (per project, type, etc)?
 - What's the average/distribution time of open issues (per project, type, etc)?
