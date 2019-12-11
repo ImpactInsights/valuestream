@@ -7,13 +7,18 @@
 - Starting valuestream and point it to an opentracing compliant backend (jaeger, lightstep, datadog, etc)
 - Configuring a supported [Event Source's](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources) webhooks to point to ValueStream
 
+
+- [Supported Event Types](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types)
+- [Supported Event Sources](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources)
+
 ValueStream can help answer:
+
+- What's the deployment rate (per project, type, etc)?
+- What's the deployment success ratio (per project, type, etc)?
 - What's the average/distribution time of open issues (per project, type, etc)?
 - What's the average/distribution of build times (per project, type, etc)?
 - What's the average/distribution of deploy times (per project, type, etc)?
 - What's the average/distribution of pull request times (per project, repo, etc)?
-- What's the deployment rate (per project, type, etc)?
-- What's the deployment success ratio (per project, type, etc)?
 
 # Quickstart (Sending Github Issue Data in 1 Minute!)
 
@@ -45,9 +50,6 @@ $ ~/ngrok http 5000
 # ValueStream In Action
 
 ValueStream aggregates data from multiple different system and stores it in a standardize data model based on opentracing specification.  Having a standard data model allows for drilling down into individual integrations (think looking at just github pull request metrics) as well as providing cross service view (Tracing delivery time across multiple systems).
-
-- [Supported Event Types](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types)
-- [Supported Event Sources](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources)
 
 ## Devops Metrics
 
