@@ -15,6 +15,8 @@ type IssueEvent struct {
 	*gitlab.IssueEvent
 }
 
+func (ie IssueEvent) Timings() eventsources.EventTimings { return nil }
+
 func (ie IssueEvent) OperationName() string {
 	return types.IssueEventType
 }
@@ -94,6 +96,8 @@ func (ie IssueEvent) Tags() (map[string]interface{}, error) {
 type MergeEvent struct {
 	*gitlab.MergeEvent
 }
+
+func (me MergeEvent) Timings() eventsources.EventTimings { return nil }
 
 func (me MergeEvent) OperationName() string {
 	return types.PullRequestEventType
@@ -175,6 +179,8 @@ func (me MergeEvent) Tags() (map[string]interface{}, error) {
 type PipelineEvent struct {
 	*gitlab.PipelineEvent
 }
+
+func (pe PipelineEvent) Timings() eventsources.EventTimings { return nil }
 
 func (pe PipelineEvent) OperationName() string {
 	return "pipeline"
@@ -267,6 +273,8 @@ func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
 type JobEvent struct {
 	*gitlab.JobEvent
 }
+
+func (je JobEvent) Timings() eventsources.EventTimings { return nil }
 
 func (je JobEvent) OperationName() string {
 	return types.BuildEventType

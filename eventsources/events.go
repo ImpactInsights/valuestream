@@ -3,6 +3,7 @@ package eventsources
 import (
 	"github.com/opentracing/opentracing-go"
 	"net/http"
+	"time"
 )
 
 type SpanState string
@@ -21,6 +22,12 @@ const (
 	UnknownState      SpanState = "unknown"
 )
 
+type EventTimings interface {
+	StartTime() time.Time
+	EndTime() time.Time
+	Duration() time.Duration
+}
+
 type Event interface {
 	SpanID() (string, error)
 	OperationName() string
@@ -28,6 +35,7 @@ type Event interface {
 	IsError() (bool, error)
 	State(prev *EventState) (SpanState, error)
 	Tags() (map[string]interface{}, error)
+	Timings() EventTimings
 }
 
 type EventSource interface {

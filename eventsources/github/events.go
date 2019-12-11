@@ -15,6 +15,8 @@ type IssuesEvent struct {
 	*github.IssuesEvent
 }
 
+func (ie IssuesEvent) Timings() eventsources.EventTimings { return nil }
+
 func (ie IssuesEvent) OperationName() string {
 	return "issue"
 }
@@ -97,6 +99,8 @@ func (ie IssuesEvent) Tags() (map[string]interface{}, error) {
 type PREvent struct {
 	*github.PullRequestEvent
 }
+
+func (pr PREvent) Timings() eventsources.EventTimings { return nil }
 
 func (pr PREvent) OperationName() string {
 	return "pull_request"

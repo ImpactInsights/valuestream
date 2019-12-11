@@ -46,6 +46,8 @@ type SprintEvent struct {
 	Sprint jira.Sprint
 }
 
+func (se SprintEvent) Timings() eventsources.EventTimings { return nil }
+
 func (se SprintEvent) SpanID() (string, error) {
 	return strings.Join([]string{
 		"vstrace",
@@ -96,6 +98,8 @@ type IssueEvent struct {
 	Issue     jira.Issue
 	Changelog jira.Changelog
 }
+
+func (ie IssueEvent) Timings() eventsources.EventTimings { return nil }
 
 func (ie IssueEvent) SpanID() (string, error) {
 	return strings.Join([]string{
