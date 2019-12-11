@@ -44,7 +44,10 @@ $ ~/ngrok http 5000
 
 # ValueStream In Action
 
-ValueStream aggregates data from multiple different system and stores it in a standardize data model based on opentracing specification.  Having a standard data model allows for drilling down into individual integrations (think looking at just github pull request metrics) as well as providing cross service view (Tracing delivery time across multiple systems).  
+ValueStream aggregates data from multiple different system and stores it in a standardize data model based on opentracing specification.  Having a standard data model allows for drilling down into individual integrations (think looking at just github pull request metrics) as well as providing cross service view (Tracing delivery time across multiple systems).
+
+- [Supported Event Types](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types)
+- [Supported Event Sources](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources)
 
 ## Devops Metrics
 
