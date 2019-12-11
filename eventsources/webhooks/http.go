@@ -12,6 +12,7 @@ import (
 	"go.opencensus.io/tag"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 const (
@@ -21,18 +22,37 @@ const (
 var (
 	eventSource, _ = tag.NewKey("event_source")
 	eventType, _   = tag.NewKey("event_type")
+	eventErr, _    = tag.NewKey("error")
 
 	EventStartCount = stats.Int64(
-		"webhooks/event/start_count",
+		"webhooks/event/start/count",
 		"Number of events started",
 		stats.UnitDimensionless,
 	)
 
 	EventStartCountView = &view.View{
-		Name:        "webhooks/event/start_count",
+		Name:        "webhooks/event/start/count",
 		Description: "Number of events started",
 		TagKeys:     []tag.Key{eventSource, eventType},
 		Measure:     EventStartCount,
+		Aggregation: view.Count(),
+	}
+
+	// Counts all end events
+	// Timings may not be available due to what some EventSources expose through
+	// their APIs, and/or start event may not be present in the span store.
+	// Because of this keep track of all event end requests.
+	EventEndCount = stats.Int64(
+		"webhooks/event/end/count",
+		"Number of events ended",
+		stats.UnitDimensionless,
+	)
+
+	EventEndCountView = &view.View{
+		Name:        "webhooks/event/start_count",
+		Description: "Number of events started",
+		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
+		Measure:     EventEndCount,
 		Aggregation: view.Count(),
 	}
 )
@@ -183,6 +203,22 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 }
 
 func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+	isE, err := e.IsError()
+	if err != nil {
+		return err
+	}
+
+	ctx, err = tag.New(ctx,
+		tag.Insert(eventSource, wh.EventSource.Name()),
+		tag.Insert(eventType, e.OperationName()),
+		tag.Insert(eventErr, strconv.FormatBool(isE)),
+	)
+	if err != nil {
+		return err
+	}
+
+	stats.Record(ctx, EventEndCount.M(1))
+
 	spanID, err := e.SpanID()
 	if err != nil {
 		return err
@@ -200,10 +236,6 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 	}
 
 	// TODO add tags on end event
-	isE, err := e.IsError()
-	if err != nil {
-		return err
-	}
 
 	entry.Span.SetTag("error", isE)
 	entry.Span.Finish()
@@ -216,7 +248,6 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 }
 
 func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
-
 	// check to see if there are any current events for this event
 	spanID, err := e.SpanID()
 	if err != nil {
