@@ -49,11 +49,38 @@ var (
 	)
 
 	EventEndCountView = &view.View{
-		Name:        "webhooks/event/start_count",
+		Name:        "webhooks/event/end/count",
 		Description: "Number of events started",
 		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
 		Measure:     EventEndCount,
 		Aggregation: view.Count(),
+	}
+
+	EventLatencyMs = stats.Float64(
+		"webhooks/event/duration",
+		"The latency in milliseconds",
+		"ms",
+	)
+
+	EventLatencyView = &view.View{
+		Name:        "webhooks/event/duration",
+		Description: "Duration of events",
+		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
+		Measure:     EventLatencyMs,
+		Aggregation: view.Distribution(
+			0,
+			1.8e+6,   // 30 minutes
+			3.6e+6,   // 1 hour
+			1.08e+7,  // 3 hours
+			2.16e+7,  // 6 hours
+			4.32e+7,  // 12 hours
+			8.64e+7,  // 24 hours
+			2.592e+8, // 3 days
+			6.048e+8, // 7 days
+			1.21e+9,  // 2 weeks
+			1.814e+9, // 3 weeks
+			2.628e+9, // 1 month
+		),
 	}
 )
 
@@ -218,6 +245,10 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 	}
 
 	stats.Record(ctx, EventEndCount.M(1))
+
+	if timings := e.Timings(); timings.Duration != nil {
+		stats.Record(ctx, EventLatencyMs.M(float64(timings.Duration.Nanoseconds()/1e6)))
+	}
 
 	spanID, err := e.SpanID()
 	if err != nil {

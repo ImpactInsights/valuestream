@@ -15,7 +15,22 @@ type IssuesEvent struct {
 	*github.IssuesEvent
 }
 
-func (ie IssuesEvent) Timings() eventsources.EventTimings { return nil }
+// Timings parses github event data for start time, end time
+// and calculates the duration.
+func (ie IssuesEvent) Timings() (eventsources.EventTimings, error) {
+	action := *ie.Action
+	timings := eventsources.EventTimings{
+		StartTime: ie.Issue.CreatedAt,
+	}
+
+	if action == "closed" {
+		timings.EndTime = ie.Issue.ClosedAt
+		diff := timings.EndTime.Sub(*timings.StartTime)
+		timings.Duration = &diff
+	}
+
+	return timings, nil
+}
 
 func (ie IssuesEvent) OperationName() string {
 	return "issue"
@@ -100,7 +115,20 @@ type PREvent struct {
 	*github.PullRequestEvent
 }
 
-func (pr PREvent) Timings() eventsources.EventTimings { return nil }
+func (pr PREvent) Timings() (eventsources.EventTimings, error) {
+	action := *pr.Action
+	timings := eventsources.EventTimings{
+		StartTime: pr.PullRequest.CreatedAt,
+	}
+
+	if action == "closed" {
+		timings.EndTime = pr.PullRequest.ClosedAt
+		diff := timings.EndTime.Sub(*timings.StartTime)
+		timings.Duration = &diff
+	}
+
+	return timings, nil
+}
 
 func (pr PREvent) OperationName() string {
 	return "pull_request"

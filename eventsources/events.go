@@ -22,10 +22,10 @@ const (
 	UnknownState      SpanState = "unknown"
 )
 
-type EventTimings interface {
-	StartTime() time.Time
-	EndTime() time.Time
-	Duration() time.Duration
+type EventTimings struct {
+	StartTime *time.Time
+	EndTime   *time.Time
+	Duration  *time.Duration
 }
 
 type Event interface {
@@ -35,7 +35,7 @@ type Event interface {
 	IsError() (bool, error)
 	State(prev *EventState) (SpanState, error)
 	Tags() (map[string]interface{}, error)
-	Timings() EventTimings
+	Timings() (EventTimings, error)
 }
 
 type EventSource interface {

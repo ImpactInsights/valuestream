@@ -4,6 +4,7 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestPullRequestEvent_ParentSpanID(t *testing.T) {
@@ -36,4 +37,48 @@ func TestPullRequestEvent_ParentSpanID(t *testing.T) {
 			assert.Equal(t, tt.expected, *match)
 		})
 	}
+}
+
+func TestIssuesEvent_Duration(t *testing.T) {
+	created := time.Date(
+		2000, 12, 1, 0, 0, 0, 0, time.UTC,
+	)
+	end := time.Date(
+		2000, 12, 1, 1, 0, 0, 0, time.UTC,
+	)
+	closed := "closed"
+	ie := IssuesEvent{
+		&github.IssuesEvent{
+			Action: &closed,
+			Issue: &github.Issue{
+				CreatedAt: &created,
+				ClosedAt:  &end,
+			},
+		},
+	}
+	timings, err := ie.Timings()
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), (*timings.Duration).Hours())
+}
+
+func TestPREvent_Duration(t *testing.T) {
+	created := time.Date(
+		2000, 12, 1, 0, 0, 0, 0, time.UTC,
+	)
+	end := time.Date(
+		2000, 12, 1, 1, 0, 0, 0, time.UTC,
+	)
+	closed := "closed"
+	pr := PREvent{
+		&github.PullRequestEvent{
+			Action: &closed,
+			PullRequest: &github.PullRequest{
+				CreatedAt: &created,
+				ClosedAt:  &end,
+			},
+		},
+	}
+	timings, err := pr.Timings()
+	assert.NoError(t, err)
+	assert.Equal(t, float64(1), (*timings.Duration).Hours())
 }

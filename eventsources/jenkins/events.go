@@ -42,7 +42,7 @@ type BuildEvent struct {
 	EndTime       int      `json:"endTime"`
 }
 
-func (be BuildEvent) Timings() eventsources.EventTimings { return nil }
+func (be BuildEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
 
 func (be BuildEvent) SpanID() (string, error) {
 	id := strings.Join([]string{
