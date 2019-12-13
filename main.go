@@ -82,6 +82,8 @@ func main() {
 			return err
 		}
 
+		go spans.Monitor(ctx, time.Second*5, "spans")
+
 		sources := []struct {
 			urlPath   string
 			name      string

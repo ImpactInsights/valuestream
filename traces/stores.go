@@ -5,35 +5,42 @@ import (
 	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"sync"
 	"time"
 )
 
 var (
-	bufferedSpansTotal = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "buffered_spans_total",
-			Help: "Gauge total number of current buffered spans",
-		},
-		[]string{"buffer_name"},
-	)
-	bufferedSpansPercentage = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "buffered_spans_percentage",
-			Help: "Gauge percentage of buffer in use",
-		},
-		[]string{"buffer_name"},
-	)
-)
+	bufferName, _ = tag.NewKey("buffer_name")
 
-func init() {
-	prometheus.MustRegister(
-		bufferedSpansTotal,
-		bufferedSpansPercentage,
+	BufferedSpansTotal = stats.Float64(
+		"traces/stores/buffered_spans/total",
+		"Gauge total number of current buffered spans",
+		stats.UnitDimensionless,
 	)
-}
+	BufferedSpansTotalView = &view.View{
+		Name:        "traces/stores/buffered_spans/total",
+		Description: "Gauge total number of current buffered spans",
+		TagKeys:     []tag.Key{bufferName},
+		Measure:     BufferedSpansTotal,
+		Aggregation: view.LastValue(),
+	}
+	BufferedSpansPercentage = stats.Float64(
+		"traces/stores/buffered_spans/percentage",
+		"Gauge percentage full current buffer",
+		stats.UnitDimensionless,
+	)
+	BufferedSpansPercentageView = &view.View{
+		Name:        "traces/stores/buffered_spans/percentage",
+		Description: "Gauge percentage full current buffer",
+		TagKeys:     []tag.Key{bufferName},
+		Measure:     BufferedSpansPercentage,
+		Aggregation: view.LastValue(),
+	}
+)
 
 type StoreEntry struct {
 	Span      opentracing.Span
@@ -166,6 +173,10 @@ func (s *BufferedSpans) DeleteAll(ctx context.Context) error {
 
 func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, name string) {
 	ticker := time.NewTicker(interval)
+	ctx, _ = tag.New(ctx,
+		tag.Insert(bufferName, name),
+	)
+
 	for {
 		select {
 		case <-ticker.C:
@@ -181,8 +192,8 @@ func (s *BufferedSpans) Monitor(ctx context.Context, interval time.Duration, nam
 				"name":              name,
 			}).Info("buffered_spans_state")
 
-			bufferedSpansTotal.With(prometheus.Labels{"buffer_name": name}).Set(currSize)
-			bufferedSpansPercentage.With(prometheus.Labels{"buffer_name": name}).Set(percentage)
+			stats.Record(ctx, BufferedSpansTotal.M(currSize))
+			stats.Record(ctx, BufferedSpansPercentage.M(percentage))
 		case <-ctx.Done():
 			ticker.Stop()
 			return
