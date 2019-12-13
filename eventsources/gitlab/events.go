@@ -15,7 +15,9 @@ type IssueEvent struct {
 	*gitlab.IssueEvent
 }
 
-func (ie IssueEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (ie IssueEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (ie IssueEvent) OperationName() string {
 	return types.IssueEventType
@@ -97,7 +99,9 @@ type MergeEvent struct {
 	*gitlab.MergeEvent
 }
 
-func (me MergeEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (me MergeEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (me MergeEvent) OperationName() string {
 	return types.PullRequestEventType
@@ -180,7 +184,9 @@ type PipelineEvent struct {
 	*gitlab.PipelineEvent
 }
 
-func (pe PipelineEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (pe PipelineEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (pe PipelineEvent) OperationName() string {
 	return "pipeline"
@@ -274,7 +280,9 @@ type JobEvent struct {
 	*gitlab.JobEvent
 }
 
-func (je JobEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (je JobEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (je JobEvent) OperationName() string {
 	return types.BuildEventType

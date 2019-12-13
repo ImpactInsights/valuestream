@@ -46,7 +46,9 @@ type SprintEvent struct {
 	Sprint jira.Sprint
 }
 
-func (se SprintEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (se SprintEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (se SprintEvent) SpanID() (string, error) {
 	return strings.Join([]string{
@@ -99,7 +101,9 @@ type IssueEvent struct {
 	Changelog jira.Changelog
 }
 
-func (ie IssueEvent) Timings() eventsources.EventTimings { return eventsources.EventTimings{} }
+func (ie IssueEvent) Timings() (eventsources.EventTimings, error) {
+	return eventsources.EventTimings{}, nil
+}
 
 func (ie IssueEvent) SpanID() (string, error) {
 	return strings.Join([]string{

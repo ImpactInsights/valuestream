@@ -222,7 +222,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 		return err
 	}
 
-	if err := wh.Spans.Set(ctx, spanID, traces.StoreEntry{Span: span}); err != nil {
+	if err := wh.Spans.Set(ctx, spanID, traces.NewStoreEntryFromSpan(span)); err != nil {
 		return err
 	}
 
@@ -246,10 +246,6 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 
 	stats.Record(ctx, EventEndCount.M(1))
 
-	if timings := e.Timings(); timings.Duration != nil {
-		stats.Record(ctx, EventLatencyMs.M(float64(timings.Duration.Nanoseconds()/1e6)))
-	}
-
 	spanID, err := e.SpanID()
 	if err != nil {
 		return err
@@ -266,8 +262,17 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 		}
 	}
 
-	// TODO add tags on end event
+	// If there's timing on the event than this should be treated as the
+	// "source-of-truth" since it comes from the event source
+	if timings, err := e.Timings(); err != nil && timings.Duration != nil {
+		stats.Record(ctx, EventLatencyMs.M(float64(timings.Duration.Nanoseconds()/1e6)))
+	} else {
+		// there's no timing, we're unable to parse the timing or .... ?
+		// use the time that ValueStream stored entry timing:
+		stats.Record(ctx, EventLatencyMs.M(float64(entry.Duration().Nanoseconds()/1e6)))
+	}
 
+	// TODO add tags on end event
 	entry.Span.SetTag("error", isE)
 	entry.Span.Finish()
 

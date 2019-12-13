@@ -74,7 +74,7 @@ func (s StubEvent) Tags() (map[string]interface{}, error) {
 	return s.TagsReturn, s.TagsReturnError
 }
 
-func (s StubEvent) Timings() EventTimings { return EventTimings{} }
+func (s StubEvent) Timings() (EventTimings, error) { return EventTimings{}, nil }
 
 type TestEvent struct {
 	Headers map[string]string

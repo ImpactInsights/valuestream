@@ -36,8 +36,20 @@ func init() {
 }
 
 type StoreEntry struct {
-	Span  opentracing.Span
-	State *eventsources.EventState
+	Span      opentracing.Span
+	State     *eventsources.EventState
+	CreatedAt time.Time
+}
+
+func NewStoreEntryFromSpan(span opentracing.Span) StoreEntry {
+	return StoreEntry{
+		Span:      span,
+		CreatedAt: time.Now().UTC(),
+	}
+}
+
+func (se StoreEntry) Duration() time.Duration {
+	return time.Now().Sub(se.CreatedAt)
 }
 
 type SpanStore interface {

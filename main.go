@@ -178,6 +178,7 @@ func main() {
 			ochttp.ServerResponseCountByStatusCode,
 			webhooks.EventStartCountView,
 			webhooks.EventEndCountView,
+			webhooks.EventLatencyView,
 		); err != nil {
 			return fmt.Errorf("failed to register ochttp Server views: %v", err)
 		}
