@@ -161,9 +161,7 @@ func main() {
 			}
 		}
 
-		exporter, err := prometheus.NewExporter(prometheus.Options{
-			Namespace: "vs",
-		})
+		exporter, err := prometheus.NewExporter(prometheus.Options{})
 
 		if err != nil {
 			return fmt.Errorf("failed to create the Prometheus exporter: %v", err)
