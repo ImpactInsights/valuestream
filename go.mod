@@ -28,7 +28,7 @@ require (
 	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
 	github.com/urfave/cli v1.22.2
 	github.com/urfave/cli/v2 v2.0.0
-	github.com/xanzy/go-gitlab v0.22.0
+	github.com/xanzy/go-gitlab v0.22.2
 	go.opencensus.io v0.22.2
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect

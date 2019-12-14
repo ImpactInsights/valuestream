@@ -15,6 +15,8 @@ type Event struct {
 	Metadata   map[string]interface{}
 }
 
+func (e Event) Timings() (eventsources.EventTimings, error) { return eventsources.EventTimings{}, nil }
+
 // ID is how an INDIVIDUAL event is referenced internally
 func (e Event) SpanID() (string, error) {
 
