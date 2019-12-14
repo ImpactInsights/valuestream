@@ -7,12 +7,81 @@ import (
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/tag"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 const (
 	SignatureHeader = "X-VS-Signature"
+)
+
+var (
+	eventSource, _ = tag.NewKey("event_source")
+	eventType, _   = tag.NewKey("event_type")
+	eventErr, _    = tag.NewKey("error")
+
+	EventStartCount = stats.Int64(
+		"webhooks/event/start/count",
+		"Number of events started",
+		stats.UnitDimensionless,
+	)
+
+	EventStartCountView = &view.View{
+		Name:        "webhooks/event/start/count",
+		Description: "Number of events started",
+		TagKeys:     []tag.Key{eventSource, eventType},
+		Measure:     EventStartCount,
+		Aggregation: view.Count(),
+	}
+
+	// Counts all end events
+	// Timings may not be available due to what some EventSources expose through
+	// their APIs, and/or start event may not be present in the span store.
+	// Because of this keep track of all event end requests.
+	EventEndCount = stats.Int64(
+		"webhooks/event/end/count",
+		"Number of events ended",
+		stats.UnitDimensionless,
+	)
+
+	EventEndCountView = &view.View{
+		Name:        "webhooks/event/end/count",
+		Description: "Number of events started",
+		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
+		Measure:     EventEndCount,
+		Aggregation: view.Count(),
+	}
+
+	EventLatencyMs = stats.Float64(
+		"webhooks/event/duration",
+		"The latency in milliseconds",
+		"ms",
+	)
+
+	EventLatencyView = &view.View{
+		Name:        "webhooks/event/duration",
+		Description: "Duration of events",
+		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
+		Measure:     EventLatencyMs,
+		Aggregation: view.Distribution(
+			0,
+			1.8e+6,   // 30 minutes
+			3.6e+6,   // 1 hour
+			1.08e+7,  // 3 hours
+			2.16e+7,  // 6 hours
+			4.32e+7,  // 12 hours
+			8.64e+7,  // 24 hours
+			2.592e+8, // 3 days
+			6.048e+8, // 7 days
+			1.21e+9,  // 2 weeks
+			1.814e+9, // 3 weeks
+			2.628e+9, // 1 month
+		),
+	}
 )
 
 type Tracers interface {
@@ -101,6 +170,16 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+	ctx, err := tag.New(ctx,
+		tag.Insert(eventSource, wh.EventSource.Name()),
+		tag.Insert(eventType, e.OperationName()),
+	)
+	if err != nil {
+		return err
+	}
+
+	stats.Record(ctx, EventStartCount.M(1))
+
 	// check to see if this event has a parent span
 	parentID, err := e.ParentSpanID()
 	if err != nil {
@@ -143,7 +222,7 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 		return err
 	}
 
-	if err := wh.Spans.Set(ctx, spanID, traces.StoreEntry{Span: span}); err != nil {
+	if err := wh.Spans.Set(ctx, spanID, traces.NewStoreEntryFromSpan(span)); err != nil {
 		return err
 	}
 
@@ -151,6 +230,22 @@ func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Trac
 }
 
 func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+	isE, err := e.IsError()
+	if err != nil {
+		return err
+	}
+
+	ctx, err = tag.New(ctx,
+		tag.Insert(eventSource, wh.EventSource.Name()),
+		tag.Insert(eventType, e.OperationName()),
+		tag.Insert(eventErr, strconv.FormatBool(isE)),
+	)
+	if err != nil {
+		return err
+	}
+
+	stats.Record(ctx, EventEndCount.M(1))
+
 	spanID, err := e.SpanID()
 	if err != nil {
 		return err
@@ -167,12 +262,17 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 		}
 	}
 
-	// TODO add tags on end event
-	isE, err := e.IsError()
-	if err != nil {
-		return err
+	// If there's timing on the event than this should be treated as the
+	// "source-of-truth" since it comes from the event source
+	if timings, err := e.Timings(); err != nil && timings.Duration != nil {
+		stats.Record(ctx, EventLatencyMs.M(float64(timings.Duration.Nanoseconds()/1e6)))
+	} else {
+		// there's no timing, we're unable to parse the timing or .... ?
+		// use the time that ValueStream stored entry timing:
+		stats.Record(ctx, EventLatencyMs.M(float64(entry.Duration().Nanoseconds()/1e6)))
 	}
 
+	// TODO add tags on end event
 	entry.Span.SetTag("error", isE)
 	entry.Span.Finish()
 
@@ -184,7 +284,6 @@ func (wh *Webhook) handleEndEvent(ctx context.Context, tracer opentracing.Tracer
 }
 
 func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
-
 	// check to see if there are any current events for this event
 	spanID, err := e.SpanID()
 	if err != nil {

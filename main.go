@@ -82,6 +82,8 @@ func main() {
 			return err
 		}
 
+		go spans.Monitor(ctx, time.Second*5, "spans")
+
 		sources := []struct {
 			urlPath   string
 			name      string
@@ -159,9 +161,7 @@ func main() {
 			}
 		}
 
-		exporter, err := prometheus.NewExporter(prometheus.Options{
-			Namespace: "vs",
-		})
+		exporter, err := prometheus.NewExporter(prometheus.Options{})
 
 		if err != nil {
 			return fmt.Errorf("failed to create the Prometheus exporter: %v", err)
@@ -176,6 +176,9 @@ func main() {
 			ochttp.ServerLatencyView,
 			ochttp.ServerRequestCountByMethod,
 			ochttp.ServerResponseCountByStatusCode,
+			webhooks.EventStartCountView,
+			webhooks.EventEndCountView,
+			webhooks.EventLatencyView,
 		); err != nil {
 			return fmt.Errorf("failed to register ochttp Server views: %v", err)
 		}
