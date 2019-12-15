@@ -130,7 +130,7 @@ func (ie IssueEvent) State(prev *eventsources.EventState) (eventsources.SpanStat
 		"prev_state":  prev,
 		"status.name": ie.Issue.Fields.Status.Name,
 		"status.id":   ie.Issue.Fields.Status.ID,
-	}).Debugf("jenkins.issueEvent.State()")
+	}).Debugf("jira.issueEvent.State()")
 
 	switch ie.Issue.Fields.Status.Name {
 	case kanbanSelectForDevelopment, kanbanInProgress:
