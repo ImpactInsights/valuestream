@@ -23,7 +23,7 @@ func (ie IssuesEvent) Timings() (eventsources.EventTimings, error) {
 		StartTime: ie.Issue.CreatedAt,
 	}
 
-	if action == "closed" {
+	if action == "closed" && timings.StartTime != nil {
 		timings.EndTime = ie.Issue.ClosedAt
 		diff := timings.EndTime.Sub(*timings.StartTime)
 		timings.Duration = &diff
@@ -117,11 +117,12 @@ type PREvent struct {
 
 func (pr PREvent) Timings() (eventsources.EventTimings, error) {
 	action := *pr.Action
+
 	timings := eventsources.EventTimings{
 		StartTime: pr.PullRequest.CreatedAt,
 	}
 
-	if action == "closed" {
+	if action == "closed" && timings.StartTime != nil {
 		timings.EndTime = pr.PullRequest.ClosedAt
 		diff := timings.EndTime.Sub(*timings.StartTime)
 		timings.Duration = &diff
