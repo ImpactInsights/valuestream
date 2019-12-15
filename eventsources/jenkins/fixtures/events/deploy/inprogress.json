@@ -1,0 +1,30 @@
+{
+  "payload": {
+    "queueTime": 29,
+    "result": "INPROGRESS",
+    "ciUrl": "http://localhost:8080/jenkins/",
+    "contextId": 102490963,
+    "fullJobName": "jenkins_test",
+    "parameters": {
+      "someParams": "someValue",
+      "type": "deploy"
+    },
+    "buildUrl": "aUrl",
+    "buildCause": "Started by anonymous",
+    "startTime": 1469453903,
+    "number": 252,
+    "startedUsername": "anonymous",
+    "jobName": "deploy:jenkins_test",
+    "slaveInfo": {
+      "slaveName": "optimusprime",
+      "executor": "1",
+      "label": "master, windows,"
+    },
+    "scmInfo": {
+      "url": "aGithubUrl",
+      "commit": "aCommitHash",
+      "branch": "origin/master"
+    },
+    "startedUserId": "anonymous"
+  }
+}
