@@ -50,7 +50,7 @@ func (be BuildEvent) SpanID() (string, error) {
 	id := strings.Join([]string{
 		eventsources.TracePrefix,
 		sourceName,
-		types.BuildEventType,
+		be.OperationName(),
 		be.JobName,
 		strconv.Itoa(be.Number),
 	}, "-")
@@ -81,13 +81,24 @@ func (be BuildEvent) State(prev *eventsources.EventState) (eventsources.SpanStat
 // OperationName determines if the event is a `deploy` or a `build`
 // based on the presence of a `type:deploy` tag.
 func (be BuildEvent) OperationName() string {
+	op := types.BuildEventType
+
+	if strings.HasPrefix(be.JobName, "deploy:") {
+		op = types.DeployEventType
+	}
+
 	if v, ok := be.Parameters["type"]; ok {
-		if v == "deploy" {
-			return "deploy"
+		if v == types.DeployEventType {
+			op = types.DeployEventType
 		}
 	}
 
-	return "build"
+	log.WithFields(log.Fields{
+		"parameters":     be.Parameters,
+		"operation_name": op,
+	}).Debug("jenkins.Event.OperationName()")
+
+	return op
 }
 
 func (be BuildEvent) IsError() (bool, error) {

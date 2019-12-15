@@ -19,8 +19,8 @@ import (
 var baseURL string
 var jenkinsPath string
 
-var urlEnvVar string = "TEST_EVENTS_URL"
-var jenkinsPathEnvVar string = "TEST_EVENTS_JENKINS_PATH"
+var urlEnvVar = "TEST_EVENTS_URL"
+var jenkinsPathEnvVar = "TEST_EVENTS_JENKINS_PATH"
 
 func init() {
 	ok := true
@@ -30,7 +30,7 @@ func init() {
 	}
 	jenkinsPath, ok = os.LookupEnv(jenkinsPathEnvVar)
 	if !ok {
-		panic(fmt.Sprintf("requires: %q", urlEnvVar))
+		panic(fmt.Sprintf("requires: %q", jenkinsPathEnvVar))
 	}
 }
 
@@ -89,6 +89,31 @@ var eventTests = []struct {
 			"service":                    "jenkins",
 		},
 	},
+	{
+		Name:                  "deploy_success",
+		StartEventPath:        "fixtures/events/deploy/inprogress.json",
+		EndEventPath:          "fixtures/events/deploy/success.json",
+		ExpectedOperationName: "deploy",
+		ExpectedTags: map[string]interface{}{
+			"build.cause":                "Started by anonymous",
+			"build.ci.url":               "http://localhost:8080/jenkins/",
+			"build.context_id":           float64(1.02490963e+08),
+			"build.job.full_name":        "jenkins_test",
+			"build.job.name":             "deploy:jenkins_test",
+			"build.number":               float64(252),
+			"build.parameter.someParams": "someValue",
+			"build.parameter.type":       "deploy",
+			"build.result":               "INPROGRESS",
+			"build.started.user.id":      "anonymous",
+			"build.started.user.name":    "anonymous",
+			"build.url":                  "aUrl",
+			"error":                      false,
+			"scm.branch":                 "master",
+			"scm.head.sha":               "aCommitHash",
+			"scm.head.url":               "aGithubUrl",
+			"service":                    "jenkins",
+		},
+	},
 }
 
 func TestServiceEvent_Jenkins(t *testing.T) {
@@ -112,6 +137,9 @@ func TestServiceEvent_Jenkins(t *testing.T) {
 			}
 			for _, eventPath := range eventPaths {
 				te, err = eventsources.NewTestEventFromFixturePath(eventPath)
+				assert.NoError(t, err)
+
+				fmt.Printf("Path: %q, payload: %q, err: %q\n", eventPath, te, err)
 
 				rawPayload, err := json.Marshal(te.Payload)
 				assert.NoError(t, err)

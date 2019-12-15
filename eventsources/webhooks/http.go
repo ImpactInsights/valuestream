@@ -25,13 +25,13 @@ var (
 	eventErr, _    = tag.NewKey("error")
 
 	EventStartCount = stats.Int64(
-		"webhooks/event/start/count",
+		"webhooks/event/start/total",
 		"Number of events started",
 		stats.UnitDimensionless,
 	)
 
 	EventStartCountView = &view.View{
-		Name:        "webhooks/event/start/count",
+		Name:        "webhooks/event/start/total",
 		Description: "Number of events started",
 		TagKeys:     []tag.Key{eventSource, eventType},
 		Measure:     EventStartCount,
@@ -43,13 +43,13 @@ var (
 	// their APIs, and/or start event may not be present in the span store.
 	// Because of this keep track of all event end requests.
 	EventEndCount = stats.Int64(
-		"webhooks/event/end/count",
+		"webhooks/event/end/total",
 		"Number of events ended",
 		stats.UnitDimensionless,
 	)
 
 	EventEndCountView = &view.View{
-		Name:        "webhooks/event/end/count",
+		Name:        "webhooks/event/end/total",
 		Description: "Number of events started",
 		TagKeys:     []tag.Key{eventSource, eventType, eventErr},
 		Measure:     EventEndCount,
