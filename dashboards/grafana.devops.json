@@ -29,7 +29,7 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 12,
         "x": 0,
         "y": 0
@@ -71,7 +71,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Deployment Rate / Source (Last Day)",
+      "title": "Deployment Rate / Source ([1d])",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -109,69 +109,12 @@
       }
     },
     {
-      "cacheTimeout": null,
-      "datasource": "Prom",
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 4,
-      "links": [],
-      "options": {
-        "fieldOptions": {
-          "calcs": [
-            "last"
-          ],
-          "defaults": {
-            "mappings": [],
-            "max": 21,
-            "min": 0,
-            "thresholds": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 5
-              }
-            ],
-            "unit": "d"
-          },
-          "override": {},
-          "values": false
-        },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "pluginVersion": "6.3.2",
-      "targets": [
-        {
-          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"issue\"}[1d]))",
-          "legendFormat": "all sources",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"issue\"}[1d])) by (event_source)",
-          "legendFormat": "{{event_source}}",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Issue Duration - Avg",
-      "type": "gauge"
-    },
-    {
       "datasource": "Prom",
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 9
+        "x": 12,
+        "y": 0
       },
       "id": 10,
       "options": {
@@ -198,7 +141,8 @@
                 "value": 50
               }
             ],
-            "title": ""
+            "title": "",
+            "unit": "percent"
           },
           "override": {},
           "values": false
@@ -208,13 +152,13 @@
       "pluginVersion": "6.3.2",
       "targets": [
         {
-          "expr": "(1 - (sum(webhooks_event_end_total{event_type=\"deploy\", error=\"false\"}) by (job) / sum(webhooks_event_end_total{event_type=\"deploy\"}) by (job))) * 100",
-          "legendFormat": "source: all",
+          "expr": "(1 - (sum(webhooks_event_end_total{event_type=\"deploy\", error=\"false\"}) by (job)  / sum(webhooks_event_end_total{event_type=\"deploy\"}) by (job))) * 100",
+          "legendFormat": "all sources",
           "refId": "A"
         },
         {
           "expr": "(1 - (sum(webhooks_event_end_total{event_type=\"deploy\", error=\"false\"}) by (event_source)/ sum(webhooks_event_end_total{event_type=\"deploy\"}) by (event_source))) * 100",
-          "legendFormat": "source: {{ event_source }}",
+          "legendFormat": "{{ event_source }}",
           "refId": "B"
         }
       ],
@@ -229,19 +173,19 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 12,
-        "y": 9
+        "x": 0,
+        "y": 8
       },
-      "id": 14,
+      "id": 4,
       "links": [],
       "options": {
         "fieldOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "defaults": {
             "mappings": [],
-            "max": 21,
+            "max": 3600000,
             "min": 0,
             "thresholds": [
               {
@@ -249,11 +193,15 @@
                 "value": null
               },
               {
+                "color": "#EAB839",
+                "value": 1200000
+              },
+              {
                 "color": "red",
-                "value": 5
+                "value": 1800000
               }
             ],
-            "unit": "d"
+            "unit": "ms"
           },
           "override": {},
           "values": false
@@ -265,98 +213,135 @@
       "pluginVersion": "6.3.2",
       "targets": [
         {
-          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d]))",
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"deploy\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"deploy\"}[1d]))) ",
           "legendFormat": "all sources",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d])) by (event_source)",
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"deploy\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"deploy\"}[1d])) by (event_source)) ",
+          "hide": false,
+          "legendFormat": "{{ event_source }}",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Deploy Duration - Avg",
+      "type": "gauge"
+    },
+    {
+      "cacheTimeout": null,
+      "datasource": "Prom",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 14,
+      "links": [],
+      "options": {
+        "fieldOptions": {
+          "calcs": [
+            "last"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 1814000000,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 432000000
+              }
+            ],
+            "unit": "ms"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "6.3.2",
+      "targets": [
+        {
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d]))) ",
+          "legendFormat": "all sources",
+          "refId": "B"
+        },
+        {
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d])) by (event_source)) ",
           "legendFormat": "{{event_source}}",
           "refId": "A"
         }
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "Pull. Request Duration - Avg",
+      "title": "Pull Request Duration - Avg",
       "type": "gauge"
     },
     {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "fill": 1,
-      "fillGradient": 0,
+      "cacheTimeout": null,
+      "datasource": "Prom",
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 17
+        "y": 16
       },
-      "id": 8,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
+      "id": 15,
+      "links": [],
       "options": {
-        "dataLinks": []
+        "fieldOptions": {
+          "calcs": [
+            "last"
+          ],
+          "defaults": {
+            "mappings": [],
+            "max": 1814000000,
+            "min": 0,
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 432000000
+              }
+            ],
+            "unit": "ms"
+          },
+          "override": {},
+          "values": false
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
       },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Deployment Frequency / Time",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
+      "pluginVersion": "6.3.2",
+      "targets": [
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"issue\"}[1d])))",
+          "legendFormat": "all sources",
+          "refId": "B"
         },
         {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"issue\"}[1d])) by (event_source)) ",
+          "legendFormat": "{{event_source}}",
+          "refId": "A"
         }
       ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Issue Duration - Avg",
+      "type": "gauge"
     },
     {
       "aliasColors": {},
@@ -370,7 +355,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 16
       },
       "id": 6,
       "legend": {
@@ -398,7 +383,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"issue\"}[1d]))",
+          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"issue\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"issue\"}[1d])) ",
           "legendFormat": "all sources",
           "refId": "A"
         },
@@ -412,7 +397,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Issue Duration - Avg ",
+      "title": "Issue Duration - Avg  ([1d])",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -428,7 +413,7 @@
       },
       "yaxes": [
         {
-          "format": "short",
+          "format": "ms",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -436,7 +421,7 @@
           "show": true
         },
         {
-          "format": "short",
+          "format": "ms",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -454,15 +439,198 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
+      "datasource": "Prom",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 17,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": false,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d])) ",
+          "legendFormat": "all sources",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"pull_request\"}[1d])) by (event_source) ",
+          "legendFormat": "{{ event_source }}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Pull Request Duration - Avg  ([1d])",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prom",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 25
+        "y": 24
       },
-      "id": 12,
+      "id": 16,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": false,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"deploy\"}[1d]) / rate(webhooks_event_duration_count{event_type=\"deploy\"}[1d])) ",
+          "legendFormat": "all sources",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(webhooks_event_duration_sum{event_type=\"deploy\"}[1d])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"deploy\"}[1d])) by (event_source) ",
+          "legendFormat": "{{ event_source }}",
+          "refId": "B"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Deploy Duration - Avg  ([1d])",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "Prom",
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 18,
       "legend": {
         "avg": false,
         "current": false,
@@ -486,11 +654,27 @@
       "spaceLength": 10,
       "stack": false,
       "steppedLine": false,
+      "targets": [
+        {
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[15m])) by (job) / sum(rate(webhooks_event_duration_count{event_type=\"pull_request\"}[15m])) by (job)) *  (sum(rate(webhooks_event_end_total{event_type=\"pull_request\"}[15m])) by (job))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "all sources",
+          "refId": "A"
+        },
+        {
+          "expr": "(sum(rate(webhooks_event_duration_sum{event_type=\"pull_request\"}[15m])) by (event_source) / sum(rate(webhooks_event_duration_count{event_type=\"pull_request\"}[15m])) by (event_source)) *  (sum(rate(webhooks_event_end_total{event_type=\"pull_request\"}[15m])) by (event_source))",
+          "hide": false,
+          "legendFormat": "{{ event_source }}",
+          "refId": "B"
+        }
+      ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Pull Request Duration",
+      "title": "Pull Request - Avg In System - [15m]",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -506,7 +690,7 @@
       },
       "yaxes": [
         {
-          "format": "short",
+          "format": "none",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -514,7 +698,7 @@
           "show": true
         },
         {
-          "format": "short",
+          "format": "none",
           "label": null,
           "logBase": 1,
           "max": null,
@@ -536,7 +720,7 @@
     "list": []
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {
@@ -556,5 +740,5 @@
   "timezone": "",
   "title": "ValueStream - DevOps Metrics - Event Sources",
   "uid": "8D0bzHBWk",
-  "version": 1
+  "version": 3
 }

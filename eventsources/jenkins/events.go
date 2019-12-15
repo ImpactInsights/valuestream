@@ -60,7 +60,7 @@ func (be BuildEvent) SpanID() (string, error) {
 }
 
 func (be BuildEvent) branchID() *string {
-	if be.ScmInfo.Branch == nil {
+	if be.ScmInfo == nil || be.ScmInfo.Branch == nil {
 		return nil
 	}
 	branch := *be.ScmInfo.Branch

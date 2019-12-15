@@ -100,8 +100,8 @@ func buildJenkinsEvent() jenkins.BuildEvent {
 	return jenkins.BuildEvent{
 		Result:      "INPROGRESS",
 		CiURL:       "http://jenkins-ci.com/",
-		FullJobName: "service-deploy",
-		JobName:     "service-deploy",
+		FullJobName: "deploy:service-deploy",
+		JobName:     "deploy:service-deploy",
 		Number:      number,
 		BuildURL:    fmt.Sprintf("job/service-deploy/%d", number),
 		Parameters: map[string]string{
@@ -184,11 +184,11 @@ func main() {
 
 	githubURL := &url.URL{}
 	*githubURL = *URL
-	githubURL.Path = path.Join(githubURL.Path, githubPath, "/")
+	githubURL.Path = path.Join(githubURL.Path, githubPath)
 
 	jenkinsURL := &url.URL{}
 	*jenkinsURL = *URL
-	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath, "/")
+	jenkinsURL.Path = path.Join(jenkinsURL.Path, jenkinsPath)
 
 	client := &http.Client{}
 
@@ -283,7 +283,7 @@ func main() {
 	}()
 
 	// generate data for build
-	buildStates := []string{"SUCCESS", "FAILURE"}
+	buildStates := []string{"SUCCESS", "SUCCESS", "FAILURE"}
 	go func() {
 		// every n minutes generate some duration that lasts m minutes
 		ticker := time.NewTicker(1 * timeoutUnit)
@@ -300,7 +300,7 @@ func main() {
 
 				req, err := http.NewRequest(
 					"POST",
-					jenkinsURL.String()+"/",
+					jenkinsURL.String(),
 					bytes.NewReader(payload),
 				)
 				if err != nil {
@@ -316,7 +316,7 @@ func main() {
 				fmt.Printf("build: sleeping: %d %s\n", num, timeoutUnit)
 				time.Sleep(time.Duration(num) * timeoutUnit)
 
-				build.Result = buildStates[rand.Intn(2)]
+				build.Result = buildStates[rand.Intn(3)]
 
 				payload, err = json.Marshal(build)
 				if err != nil {
@@ -326,7 +326,7 @@ func main() {
 
 				req, err = http.NewRequest(
 					"POST",
-					jenkinsURL.String()+"/",
+					jenkinsURL.String(),
 					bytes.NewReader(payload),
 				)
 				if err != nil {
