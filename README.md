@@ -55,21 +55,24 @@ ValueStream aggregates data from multiple different system and stores it in a st
 Valuestream is able to provide a cross system view into software development.  The dashboard below shows the average lead time across all issues from all systems (currently only Github issues are supported). The magic of having a standardized data model enables the view below to seamlessly work for github issues, jira issues, trello issues, or any other system that supports webhooks.  To drive this home consider a company that has code in both Github and Gitlab.  ValueStream can provide the average pull request duration across both github and gitlab, as well as the average across just github or just gitlab.  It even supports drilling down further by providing the average pull request duration by repo across both github and gitlab.
 
 
-#### (Example below surfacing metrics to jaeger backed by elastic)
+#### Example Surfacing Metrics to Jaeger Backed by Elastic
 <p align="center">
   <img width="900px" src="docs/static/accelerate_dashboard.png">
 </p>
 
+### Example Surfacing Metrics to Prometheus through OpenCensus
 
-## Traces
+<img width="1680" alt="grafana_dashboard_1" src="https://user-images.githubusercontent.com/321963/71187235-ab003d80-224c-11ea-8e41-3136b14aea33.png">
 
-The real power of value stream comes from being able to tie together all the Delivery events (Issue, PRs, Builds & Deploys) from different sources.  When events are connected it is called a "Trace".  The image below shows the example of all steps required in order to produce a valuestream feature:
+## Traces 
+
+The real power of value stream comes from being able to tie together all the Delivery events (Issue, PRs, Builds & Deploys) from different sources.  When events are connected it is called a "Trace".  The image below shows the example of all steps required in order to produce a ValueStream feature:
 
 <p align="center">
   <img width="1448" alt="Screen Shot 2019-07-14 at 5 34 52 PM" src="https://user-images.githubusercontent.com/53025024/61565404-ed77e100-aa46-11e9-89f7-56ba7ba694ad.png">
 </p>
 
-To generate traces ValueStream leverages the OpenTracing ecosystem.  This defines a structured conventions to connecting data from multiple systems and provides mature client libraries and a rich infrastructure ecosystem.  In order to use get the most out of ValueStream it must be pointed at an opentracing stack.  [Jaeger](https://github.com/jaegertracing/jaeger) (by uber) is the most popular open source stack and has 8500+ stars on github.  Local development of ValueStream is done using jaeger. Any other opentracing compliant stack can be used (Datadog, Lightstep, etc).  ValueStream uses [LightStep](https://lightstep.com/) in production for development of ValueStream. 
+To generate traces ValueStream leverages the OpenTracing ecosystem.  ValueStream must be started using an opentracing compliant backend (jaeger or lightstep). This defines a structured conventions to connecting data from multiple systems and provides mature client libraries and a rich infrastructure ecosystem.  In order to use get the most out of ValueStream it must be pointed at an opentracing stack.  [Jaeger](https://github.com/jaegertracing/jaeger) (by uber) is the most popular open source stack and has 8500+ stars on github.  Local development of ValueStream is done using jaeger. Any other opentracing compliant stack can be used (Datadog, Lightstep, etc).  ValueStream uses [LightStep](https://lightstep.com/) in production for development of ValueStream. 
 
 Traces support drilling down into individual units or stages of work in order to see where time was spent in the delivery pipeline. This allows technical executives, managers, directors and VPs to debug software delivery in the same way an engineer debugs a distributed system, using datadriven hypothesis and measuring impact for each change. 
 
