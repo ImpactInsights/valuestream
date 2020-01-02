@@ -24,7 +24,18 @@
 
       ]
     },
-    "merge_request": null,
+    "merge_request": {
+      "id": 1,
+      "iid": 1,
+      "title": "Test",
+      "source_branch": "test",
+      "source_project_id": 1,
+      "target_branch": "master",
+      "target_project_id": 1,
+      "state": "opened",
+      "merge_status": "can_be_merged",
+      "url": "https://gitlab.com/dm03514/test-project/merge_requests/1"
+    },
     "user": {
       "name": "Daniel Mican",
       "username": "dm03514",
