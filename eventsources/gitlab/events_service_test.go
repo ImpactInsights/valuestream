@@ -65,6 +65,8 @@ var eventTests = []struct {
 			"user.name":                   "Daniel Mican",
 			"build.before_sha":            "0000000000000000000000000000000000000000",
 			"error":                       false,
+			"merge_request.id":            1,
+			"merge_request.url":           "https://gitlab.com/dm03514/test-project/merge_requests/1",
 		},
 	},
 	{
@@ -92,6 +94,8 @@ var eventTests = []struct {
 			"user.name":                   "Daniel Mican",
 			"build.before_sha":            "0000000000000000000000000000000000000000",
 			"error":                       false,
+			"merge_request.id":            1,
+			"merge_request.url":           "https://gitlab.com/dm03514/test-project/merge_requests/1",
 		},
 	},
 	{
