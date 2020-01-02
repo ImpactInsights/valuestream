@@ -267,6 +267,9 @@ func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
 	tags["build.sha"] = pe.ObjectAttributes.SHA
 	tags["build.before_sha"] = pe.ObjectAttributes.BeforeSHA
 
+	tags["merge_request.id"] = pe.MergeRequest.ID
+	tags["merge_request.url"] = pe.MergeRequest.URL
+
 	sID, _ := pe.SpanID()
 	tags["vstrace.span.id"] = sID
 
