@@ -54,6 +54,6 @@ test-service-events:
 		./eventsources/... -count=1 -p 1
 
 docker-image:
-	docker build -f Dockerfile -t valuestream .
+	docker build -f Dockerfile -t impactinsights/valuestream .
 
 .PHONY: test-unit start-stack fmt
