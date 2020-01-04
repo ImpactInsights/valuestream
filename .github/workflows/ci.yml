@@ -30,7 +30,11 @@ jobs:
     - name: Fmt
       run: make fmt
 
-  unit-test:
+  test:
+    name: unit-test
+    runs-on: ubuntu-latest
+    steps:
+
     - name: unit-test
       run: make test-unit
       
