@@ -163,6 +163,8 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	switch v := e.(type) {
 	case gitlab.PipelineEvent:
 		events = v.Events()
+	case gitlab.JobEvent:
+		events = v.Events()
 	}
 
 	for _, e := range events {
@@ -170,7 +172,7 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 			log.WithFields(log.Fields{
 				"error": err.Error(),
 				"event": e,
-			}).Errorf("error processinng event")
+			}).Errorf("error processing event")
 			http.Error(w, "error", http.StatusBadRequest)
 			return
 		}
@@ -179,7 +181,20 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("success"))
 }
 
-func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event) error {
+func (wh *Webhook) handleStartEvent(ctx context.Context, tracer opentracing.Tracer, e eventsources.Event, prevEntry *traces.StoreEntry) error {
+	// if there was a previous entry and this is a start event ignore???
+	// TODO this will need to be formalized, perhaps with a flag?
+	// need to make sure that we aren't double counting...
+	// still not sure how this will adapt to each of the event sources
+	// or if this is generic enough to accommodate all use cases
+	// TODO apply all new tags??!!?!?
+	if prevEntry != nil {
+		log.WithFields(log.Fields{
+			"entry": prevEntry,
+		}).Infof("start event on previous entry")
+		return nil
+	}
+
 	ctx, err := tag.New(ctx,
 		tag.Insert(eventSource, wh.EventSource.Name()),
 		tag.Insert(eventType, e.OperationName()),
@@ -323,7 +338,7 @@ func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e
 
 	switch state {
 	case eventsources.StartState:
-		return wh.handleStartEvent(ctx, tracer, e)
+		return wh.handleStartEvent(ctx, tracer, e, entry)
 	case eventsources.EndState:
 		return wh.handleEndEvent(ctx, tracer, e)
 	case eventsources.TransitionState:
@@ -333,7 +348,7 @@ func (wh *Webhook) handleEvent(ctx context.Context, tracer opentracing.Tracer, e
 				"error": err.Error(),
 			}).Errorf("webhooks.handleEvent")
 		}
-		return wh.handleStartEvent(ctx, tracer, e)
+		return wh.handleStartEvent(ctx, tracer, e, nil)
 	}
 
 	return nil

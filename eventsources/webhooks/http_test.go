@@ -122,6 +122,7 @@ func TestWebhook_handleStartEvent_WithTrace_Success(t *testing.T) {
 		context.Background(),
 		tracer,
 		e,
+		nil,
 	))
 
 	numSpans, _ := wh.Spans.Count()

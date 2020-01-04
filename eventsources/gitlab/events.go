@@ -244,7 +244,10 @@ func (pe PipelineEvent) Timings() (eventsources.EventTimings, error) {
 }
 
 func (pe PipelineEvent) OperationName() string {
-	return pe.ObjectAttributes.Status
+	return fmt.Sprintf("%s-%s",
+		types.PipelineEventType,
+		pe.ObjectAttributes.Status,
+	)
 }
 
 func (pe PipelineEvent) SpanID() (string, error) {
@@ -345,13 +348,40 @@ type JobEvent struct {
 	*gitlab.JobEvent
 }
 
+func (je JobEvent) Events() []eventsources.Event {
+	state, _ := je.State(nil)
+
+	gitlabEvent := &gitlab.PipelineEvent{}
+
+	gitlabEvent.Project.Name = je.ProjectName
+	gitlabEvent.ObjectAttributes.ID = je.PipelineID
+
+	logicalEvent := PipelineLogicalEvent{
+		PipelineEvent: &PipelineEvent{
+			gitlabEvent,
+		},
+	}
+
+	if state == eventsources.StartState {
+		return []eventsources.Event{
+			logicalEvent,
+			je,
+		}
+	}
+
+	return []eventsources.Event{
+		je,
+		logicalEvent,
+	}
+
+}
+
 func (je JobEvent) Timings() (eventsources.EventTimings, error) {
 	return eventsources.EventTimings{}, nil
 }
 
 func (je JobEvent) OperationName() string {
-	return types.BuildEventType
-
+	return fmt.Sprintf("%s-%s", types.BuildEventType, je.BuildStatus)
 }
 
 func (je JobEvent) SpanID() (string, error) {
@@ -412,7 +442,7 @@ func (je JobEvent) ParentSpanID() (*string, error) {
 		sourceName,
 		types.BuildEventType,
 		je.Repository.Name,
-		strconv.Itoa(je.PipelineID.ID),
+		strconv.Itoa(je.PipelineID),
 	}, "-")
 
 	return &id, nil
