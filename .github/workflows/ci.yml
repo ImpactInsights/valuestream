@@ -2,8 +2,8 @@ name: CI
 on: [push]
 jobs:
 
-  build:
-    name: Build
+  ci:
+    name: CI
     runs-on: ubuntu-latest
     steps:
 
@@ -30,7 +30,16 @@ jobs:
     - name: Fmt
       run: make fmt
 
-    - name: unit-test
+    - name: Unit tests
       run: make test-unit
-      
+
+    - name: Start ValueStream
+      run: make start-valuestream-events-test &
+
+    - name: Wait for ValueStream to initialize
+      run: ./bin/wait-for-it.sh localhost:7778
+
+    - name: Execute Events Tests
+      run: make test-service-events
+
       
