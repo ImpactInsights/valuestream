@@ -30,6 +30,7 @@ jobs:
     - name: Fmt
       run: make fmt
 
+  unit-test:
     - name: unit-test
       run: make test-unit
       
