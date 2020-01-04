@@ -2,8 +2,8 @@ name: CI
 on: [push]
 jobs:
 
-  build:
-    name: Build
+  ci:
+    name: CI
     runs-on: ubuntu-latest
     steps:
 
@@ -32,5 +32,11 @@ jobs:
 
     - name: unit-test
       run: make test-unit
-      
+
+    - name: start-valuestream-events-tests
+      run: make start-valuestream-events-test &
+
+    - name: test-service-events
+      run: make test-service-events
+
       
