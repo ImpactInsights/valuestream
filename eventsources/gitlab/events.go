@@ -180,8 +180,63 @@ func (me MergeEvent) Tags() (map[string]interface{}, error) {
 	return tags, nil
 }
 
+type PipelineLogicalEvent struct {
+	*PipelineEvent
+}
+
+func (p PipelineLogicalEvent) OperationName() string {
+	return types.PipelineEventType
+}
+
+func (p PipelineLogicalEvent) SpanID() (string, error) {
+	return strings.Join([]string{
+		traces.LogicalTracePrefix,
+		sourceName,
+		types.BuildEventType,
+		p.Project.Name,
+		strconv.Itoa(p.ObjectAttributes.ID),
+	}, "-"), nil
+}
+
+func (p PipelineLogicalEvent) State(prev *eventsources.EventState) (eventsources.SpanState, error) {
+	s, err := p.PipelineEvent.State(prev)
+	if err != nil {
+		return eventsources.UnknownState, err
+	}
+
+	// if the event type is
+	switch s {
+	case eventsources.StartState:
+		return eventsources.StartState, nil
+	case eventsources.EndState:
+		return eventsources.EndState, nil
+	}
+
+	return eventsources.UnknownState, nil
+}
+
 type PipelineEvent struct {
 	*gitlab.PipelineEvent
+}
+
+func (pe PipelineEvent) Events() []eventsources.Event {
+	// if this is a start event put the logical event on first
+	state, _ := pe.State(nil)
+	logicalEvent := PipelineLogicalEvent{
+		&pe,
+	}
+
+	if state == eventsources.StartState {
+		return []eventsources.Event{
+			logicalEvent,
+			pe,
+		}
+	}
+
+	return []eventsources.Event{
+		pe,
+		logicalEvent,
+	}
 }
 
 func (pe PipelineEvent) Timings() (eventsources.EventTimings, error) {
@@ -189,7 +244,7 @@ func (pe PipelineEvent) Timings() (eventsources.EventTimings, error) {
 }
 
 func (pe PipelineEvent) OperationName() string {
-	return "pipeline"
+	return pe.ObjectAttributes.Status
 }
 
 func (pe PipelineEvent) SpanID() (string, error) {
@@ -238,11 +293,18 @@ func (pe PipelineEvent) IsError() (bool, error) {
 	return isErr, nil
 }
 
-// ParentSpanID inspects the pipeline payload for the causing event:
-// - Pull Request
-// - Issue
+// ParentSpanID inspects the pipeline payload for the logical pipeline
+// event.
 func (pe PipelineEvent) ParentSpanID() (*string, error) {
-	return nil, nil
+	id := strings.Join([]string{
+		traces.LogicalTracePrefix,
+		sourceName,
+		types.BuildEventType,
+		pe.Project.Name,
+		strconv.Itoa(pe.ObjectAttributes.ID),
+	}, "-")
+
+	return &id, nil
 }
 
 func (pe PipelineEvent) Tags() (map[string]interface{}, error) {
@@ -345,13 +407,12 @@ func (je JobEvent) IsError() (bool, error) {
 }
 
 func (je JobEvent) ParentSpanID() (*string, error) {
-	// TODO
 	id := strings.Join([]string{
-		"vstrace",
+		traces.LogicalTracePrefix,
 		sourceName,
 		types.BuildEventType,
 		je.Repository.Name,
-		strconv.Itoa(je.Commit.ID),
+		strconv.Itoa(je.PipelineID.ID),
 	}, "-")
 
 	return &id, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ImpactInsights/valuestream/eventsources"
+	"github.com/ImpactInsights/valuestream/eventsources/gitlab"
 	"github.com/ImpactInsights/valuestream/traces"
 	"github.com/opentracing/opentracing-go"
 	log "github.com/sirupsen/logrus"
@@ -157,13 +158,22 @@ func (wh *Webhook) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer closer.Close()
 
-	if err := wh.handleEvent(r.Context(), tracer, e); err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-			"event": e,
-		}).Errorf("error processinng event")
-		http.Error(w, "error", http.StatusBadRequest)
-		return
+	events := []eventsources.Event{e}
+
+	switch v := e.(type) {
+	case gitlab.PipelineEvent:
+		events = v.Events()
+	}
+
+	for _, e := range events {
+		if err := wh.handleEvent(r.Context(), tracer, e); err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+				"event": e,
+			}).Errorf("error processinng event")
+			http.Error(w, "error", http.StatusBadRequest)
+			return
+		}
 	}
 
 	w.Write([]byte("success"))

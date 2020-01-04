@@ -6,4 +6,5 @@ const (
 	BuildEventType       string = "build"
 	DeployEventType      string = "deploy"
 	SprintEventType      string = "sprint"
+	PipelineEventType    string = "pipeline"
 )
