@@ -28,17 +28,18 @@ type PullRequestPerformanceMetric struct {
 }
 
 type PullRequestPerformanceAggregate struct {
-	Key                string
-	Interval           string
-	Owner              string
-	Repo               string
-	TotalPullRequests  int
-	NumMerged          int
-	MergeRatio         float64
-	AvgDuration        float64
-	P95Duration        float64
-	AvgDurationLine    float64
-	AvgDurationComment float64
+	Key                  string
+	Interval             string
+	Owner                string
+	Repo                 string
+	TotalPullRequests    int
+	NumMerged            int
+	MergeRatio           float64
+	AvgTotalLinesChanged float64
+	AvgDuration          float64
+	P95Duration          float64
+	AvgDurationLine      float64
+	AvgDurationComment   float64
 }
 
 func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
@@ -73,10 +74,12 @@ func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]
 		var durations []float64
 		var durationsPerLine []float64
 		var durationsPerComment []float64
+		var totalLinesChange []float64
 		for _, m := range metrics {
 			durations = append(durations, m.DurationSeconds)
 			durationsPerLine = append(durationsPerLine, m.DurationPerLine)
 			durationsPerComment = append(durationsPerComment, m.DurationPerComment)
+			totalLinesChange = append(totalLinesChange, float64(m.TotalChanges))
 
 			if m.Merged {
 				numMerged++
@@ -120,6 +123,13 @@ func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]
 			return nil, err
 		}
 		agg.AvgDurationComment = avgDurationPerComment
+
+		// calc avg total lines changed per pull request
+		avgTotalLinesChanged, err := stats.Mean(totalLinesChange)
+		if err != nil {
+			return nil, err
+		}
+		agg.AvgTotalLinesChanged = avgTotalLinesChanged
 
 		aggs = append(aggs, agg)
 	}
