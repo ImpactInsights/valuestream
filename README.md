@@ -7,10 +7,6 @@
 - Starting ValueStream and point it to a metric store: jaeger, lightstep, prometheus
 - Configuring a supported [Event Source's](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources) webhooks to point to ValueStream
 
-Features:
-- [Supported Event Types](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types)
-- [Supported Event Sources](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources)
-
 ValueStream can help answer:
 - What's the deployment rate (per project, type, etc)?
 - What's the deployment success ratio (per project, type, etc)?
@@ -23,7 +19,7 @@ ValueStream is also a collection of CLI tools to generate performance metrics fr
 
 
 # Table Of Contents
-- Quickstart
+- [QuickStart](# QuickStart)
     - HTTP
     - CLI
 - Overview
@@ -32,7 +28,9 @@ ValueStream is also a collection of CLI tools to generate performance metrics fr
 - Configuration
 - Roadmap
 
-# Quickstart (Sending Github Issue Data in 1 Minute!)
+# QuickStart 
+
+(Sending Github Issue Data in 1 Minute!)
 
 ValueStream can be started and submitting software metrics in minutes. [VIDEO QUICKSTART HERE](https://youtu.be/c7gD7WGqFxY) (video requires `docker-compose up -d`)
 
