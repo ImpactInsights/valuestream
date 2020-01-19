@@ -20,10 +20,10 @@ ValueStream is also a collection of CLI tools to generate performance metrics fr
 
 # Table Of Contents
 - [QuickStart](#QuickStart)
-    - HTTP (##HTTP)
-    - CLI (##CLI)
-- Overview (#ValueStream-In-Action)
-    - DevOps Metrics (##Devops-Metrics)
+    - [HTTP](##HTTP)
+    - [CLI](##CLI)
+- [Overview](#ValueStream-In-Action)
+    - [DevOps Metrics](##Devops-Metrics)
 - Local Development
 - Configuration
 - Roadmap
