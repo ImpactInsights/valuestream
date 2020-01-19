@@ -19,7 +19,7 @@ ValueStream is also a collection of CLI tools to generate performance metrics fr
 
 
 # Table Of Contents
-- [QuickStart](# QuickStart)
+- [QuickStart](#-QuickStart)
     - HTTP
     - CLI
 - Overview
