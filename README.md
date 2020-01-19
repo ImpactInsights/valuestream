@@ -20,16 +20,17 @@ ValueStream is also a collection of CLI tools to generate performance metrics fr
 
 # Table Of Contents
 - [QuickStart](#QuickStart)
-    - HTTP
-    - CLI
-- Overview
-    - DevOps Metrics
+    - HTTP (##HTTP)
+    - CLI (##CLI)
+- Overview (#ValueStream-In-Action)
+    - DevOps Metrics (##Devops-Metrics)
 - Local Development
 - Configuration
 - Roadmap
 
 # QuickStart 
 
+## HTTP
 (Sending Github Issue Data in 1 Minute!)
 
 ValueStream can be started and submitting software metrics in minutes. [VIDEO QUICKSTART HERE](https://youtu.be/c7gD7WGqFxY) (video requires `docker-compose up -d`)
@@ -55,6 +56,8 @@ $ ~/ngrok http 5000
 - Point your github [webhook](https://developer.github.com/webhooks/) at `ngrok`
 
 - Start tracking issues and pull requests!
+
+## CLI
 
 
 # ValueStream In Action
