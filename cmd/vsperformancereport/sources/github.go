@@ -6,9 +6,13 @@ import (
 	"github.com/ImpactInsights/valuestream/cmd/vsperformancereport/metrics"
 	"github.com/gocarina/gocsv"
 	"github.com/google/go-github/github"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
 	"time"
 )
 
@@ -64,6 +68,11 @@ func NewGithubCommand() *cli.Command {
 				Value: "",
 				Usage: "an individual repo",
 			},
+			&cli.StringFlag{
+				Name:  "out",
+				Value: "STDOUT",
+				Usage: "File to write output to",
+			},
 			&cli.IntFlag{
 				Name:  "per-page",
 				Value: 100,
@@ -83,10 +92,26 @@ func NewGithubCommand() *cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			ctx := context.Background()
+
+			signalChan := make(chan os.Signal, 1)
+			signal.Notify(signalChan, os.Interrupt)
+
 			org := c.String("org")
 			repo := c.String("repo")
 			accessToken := c.String("access-token")
 			maxPage := c.Int("max-page")
+			outFilePath := c.String("out")
+
+			// get the output file
+			out := os.Stdout
+			if outFilePath != "STDOUT" {
+				var err error
+				out, err = os.Create(outFilePath)
+				if err != nil {
+					return err
+				}
+				defer out.Close()
+			}
 
 			var tc *http.Client
 			if accessToken != "" {
@@ -99,9 +124,15 @@ func NewGithubCommand() *cli.Command {
 			client := github.NewClient(tc)
 
 			page := 1
+			last := "unknown"
 
 			var metrics []metrics.PullRequestPerformanceMetric
 			for {
+				log.WithFields(log.Fields{
+					"page": page,
+					"last": last,
+				}).Infof("PullRequests.List")
+
 				prs, resp, err := client.PullRequests.List(
 					ctx,
 					org,
@@ -117,9 +148,15 @@ func NewGithubCommand() *cli.Command {
 				if err != nil {
 					return err
 				}
+				last = strconv.Itoa(resp.LastPage)
 
-				limiter := time.Tick(500 * time.Millisecond)
-				for _, pr := range prs {
+				limiter := time.NewTicker(500 * time.Millisecond)
+				for i, pr := range prs {
+					log.WithFields(log.Fields{
+						"curr": i,
+						"last": len(prs),
+					}).Infof("PullRequests.Get")
+
 					// get the individual PR
 					directPR, _, err := client.PullRequests.Get(ctx, org, repo, pr.GetNumber())
 					if err != nil {
@@ -127,22 +164,27 @@ func NewGithubCommand() *cli.Command {
 					}
 
 					metrics = append(metrics, NewPullRequestPerformanceMetric(directPR))
-					<-limiter
+
+					select {
+					case <-limiter.C:
+						continue
+					case <-signalChan:
+						return fmt.Errorf("killed")
+					}
 				}
 
 				if page == maxPage || page == resp.LastPage {
+					log.Infof("max page: %d reached", maxPage)
 					break
 				}
 
 				page++
 			}
 
-			csvString, err := gocsv.MarshalString(metrics)
-			if err != nil {
+			if err := gocsv.Marshal(metrics, out); err != nil {
 				return err
 			}
 
-			fmt.Println(csvString)
 			return nil
 		},
 	}
