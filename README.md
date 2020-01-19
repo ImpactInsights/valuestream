@@ -59,6 +59,45 @@ $ ~/ngrok http 5000
 
 ## CLI
 
+ValueStream offers a CLI for pulling data and generating offline performance reports.  Generating a report requires pulling the raw pull request information from a third-party api (GitHub in this case):
+
+```
+$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -repo=valuestream -per-page=10 -max-page=1 -out=/tmp/vs-prs.csv
+```
+This command pulls 10 of the most recent closed pull requests using the GitHub api.  Outputs:
+
+```
+$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -repo=valuestream -per-page=10 -max-page=1 -out=/tmp/vs-prs.csv
+INFO[0000] PullRequests.List                             last=unknown page=1
+INFO[0000] PullRequests.Get                              curr=0 last=10
+INFO[0001] PullRequests.Get                              curr=1 last=10
+INFO[0001] PullRequests.Get                              curr=2 last=10
+INFO[0002] PullRequests.Get                              curr=3 last=10
+INFO[0002] PullRequests.Get                              curr=4 last=10
+INFO[0003] PullRequests.Get                              curr=5 last=10
+INFO[0003] PullRequests.Get                              curr=6 last=10
+INFO[0004] PullRequests.Get                              curr=7 last=10
+INFO[0004] PullRequests.Get                              curr=8 last=10
+INFO[0005] PullRequests.Get                              curr=9 last=10
+INFO[0005] max page: 1 reached
+```
+Next is to generate [pull request performance metrics](https://medium.com/valuestream-by-operational-analytics-inc/using-code-review-metrics-as-performance-indicators-caa47a716297):
+
+```
+$ go run cmd/vsperformancereport/main.go agg -in=/tmp/vs-prs.csv pull-request
+
+Key,Interval,Owner,Repo,TotalPullRequests,NumMerged,MergeRatio,AvgTotalLinesChanged,AvgDuration,P95Duration,AvgDurationLine,AvgDurationComment
+2020|3_ImpactInsights|valuestream,2020|3,ImpactInsights,valuestream,1,1,1,428,98687,0,0.0043369440757141265,0
+2020|1_ImpactInsights|valuestream,2020|1,ImpactInsights,valuestream,3,2,0.67,84.66666666666667,3675.3333333333335,0,0.049723958097649984,0.00022528174109838546
+2019|50_ImpactInsights|valuestream,2019|50,ImpactInsights,valuestream,1,1,1,665,8565,0,0.07764156450671336,0.0002335084646818447
+2019|49_ImpactInsights|valuestream,2019|49,ImpactInsights,valuestream,2,2,1,220,251010,0,0.5457733277063436,0.004546450739991414
+2019|47_ImpactInsights|valuestream,2019|47,ImpactInsights,valuestream,3,3,1,2267.3333333333335,57137.666666666664,0,20.19594165433617,0
+```
+These can be easily visualized using any spreadsheet:
+
+<p align="center">
+   <img width="500px" src="https://user-images.githubusercontent.com/321963/72682338-f00ccf00-3a99-11ea-9c1c-87799b88265b.png">
+</p>
 
 # ValueStream In Action
 
