@@ -2,7 +2,7 @@
   <img src="docs/static/valuestream.png">
 </p>
 
-[ValueStream](https://medium.com/@dm03514/valuestream-devops-metrics-observing-delivery-across-multiple-systems-7ae76a6e8deb) provides a centralized view into key DevOps delivery [Events](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types): Issues, Pull Requests, Builds and Deploys. ValueStream is a standalone HTTP service that listens for events (webhooks) from a variety of software platforms, and using it is as easy as: 
+[ValueStream](https://medium.com/@dm03514/valuestream-devops-metrics-observing-delivery-across-multiple-systems-7ae76a6e8deb) provides a centralized view into key DevOps delivery [Events](https://github.com/ImpactInsights/valuestream/wiki/Events#event-types): Issues, Pull Requests, Builds and Deploys. ValueStream comes with a standalone HTTP service that listens for events (webhooks) from a variety of software platforms, and using it is as easy as: 
 
 - Starting ValueStream and point it to a metric store: jaeger, lightstep, prometheus
 - Configuring a supported [Event Source's](https://github.com/ImpactInsights/valuestream/wiki/Events#event-sources) webhooks to point to ValueStream
@@ -18,6 +18,19 @@ ValueStream can help answer:
 - What's the average/distribution of build times (per project, type, etc)?
 - What's the average/distribution of deploy times (per project, type, etc)?
 - What's the average/distribution of pull request times (per project, repo, etc)?
+
+ValueStream is also a collection of CLI tools to generate performance metrics from third party sources (ie GitHub).
+
+
+# Table Of Contents
+- Quickstart
+    - HTTP
+    - CLI
+- Overview
+    - DevOps Metrics
+- Local Development
+- Configuration
+- Roadmap
 
 # Quickstart (Sending Github Issue Data in 1 Minute!)
 
@@ -52,7 +65,7 @@ ValueStream aggregates data from multiple different system and stores it in a st
 
 ## Devops Metrics
 
-Valuestream is able to provide a cross system view into software development.  The dashboard below shows the average lead time across all issues from all systems (currently only Github issues are supported). The magic of having a standardized data model enables the view below to seamlessly work for github issues, jira issues, trello issues, or any other system that supports webhooks.  To drive this home consider a company that has code in both Github and Gitlab.  ValueStream can provide the average pull request duration across both github and gitlab, as well as the average across just github or just gitlab.  It even supports drilling down further by providing the average pull request duration by repo across both github and gitlab.
+ValueStream is able to provide a cross system view into software development.  The dashboard below shows the average lead time across all issues from all systems (currently only Github issues are supported). The magic of having a standardized data model enables the view below to seamlessly work for github issues, jira issues, trello issues, or any other system that supports webhooks.  To drive this home consider a company that has code in both Github and Gitlab.  ValueStream can provide the average pull request duration across both github and gitlab, as well as the average across just github or just gitlab.  It even supports drilling down further by providing the average pull request duration by repo across both github and gitlab.
 
 
 #### Example Surfacing Metrics to Jaeger Backed by Elastic
@@ -126,8 +139,7 @@ ok      github.com/ImpactInsights/valuestream/eventsources/webhooks     0.080s [
 -- Both jaeger and lightstep require additional configuration using their exposed environmental variables for their go client
 
 # Roadmap
-- OpenCensus Operational Metrics
-- OpenCensus DevOps Metrics Exporter 
+- Data analysis commands
 - Trace Strategy
 - Trello
 - Historical Data Import 
