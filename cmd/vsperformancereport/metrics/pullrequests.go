@@ -28,30 +28,46 @@ type PullRequestPerformanceMetric struct {
 }
 
 type PullRequestPerformanceAggregate struct {
-	Key                  string
-	Interval             string
-	Owner                string
-	Repo                 string
-	TotalPullRequests    int
-	NumMerged            int
-	MergeRatio           float64
-	AvgTotalLinesChanged float64
-	AvgDuration          float64
-	P95Duration          float64
-	AvgDurationLine      float64
-	AvgDurationComment   float64
+	Key                          string
+	Interval                     string
+	Owner                        string
+	Repo                         string
+	TotalPullRequests            int
+	NumMerged                    int
+	MergeRatio                   float64
+	AvgTotalLinesChanged         float64
+	AvgDurationHours             float64
+	AvgDurationSecondsPerLine    float64
+	AvgDurationSecondsPerComment float64
 }
 
-func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
+func intervalToKey(i string, createdAt time.Time) (string, error) {
+	switch i {
+	case "day":
+		year, month, day := createdAt.Date()
+		return fmt.Sprintf("%d|%d|%d", year, month, day), nil
+	case "week":
+		year, week := createdAt.ISOWeek()
+		return fmt.Sprintf("%d|%d", year, week), nil
+	case "month":
+		year, month, _ := createdAt.Date()
+		return fmt.Sprintf("%d|%d", year, month), nil
+	}
+	return "", fmt.Errorf("interval: %s not supported", i)
+}
+
+func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
 	// by default aggregate by week
 	bucketed := make(map[string][]PullRequestPerformanceMetric)
 
 	for _, pr := range ms {
-		year, week := pr.CreatedAt.ISOWeek()
+		intervalKey, err := intervalToKey(aggInterval, pr.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
 		key := fmt.Sprintf(
-			"%d|%d_%s|%s",
-			year,
-			week,
+			"%s_%s|%s",
+			intervalKey,
 			pr.Owner,
 			pr.Repo,
 		)
@@ -98,7 +114,7 @@ func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]
 		if err != nil {
 			return nil, err
 		}
-		agg.AvgDuration = avgDuration
+		agg.AvgDurationHours = avgDuration / (60 * 60) // 60 seconds / 1 minute * 60 minutes / 1 hour
 
 		/*
 			// calc p95 duration
@@ -115,14 +131,14 @@ func NewPullRequestPerformanceAggregation(ms []PullRequestPerformanceMetric) ([]
 		if err != nil {
 			return nil, err
 		}
-		agg.AvgDurationLine = avgDurationPerLine
+		agg.AvgDurationSecondsPerLine = avgDurationPerLine
 
 		// calc avg per comment
 		avgDurationPerComment, err := stats.Mean(durationsPerComment)
 		if err != nil {
 			return nil, err
 		}
-		agg.AvgDurationComment = avgDurationPerComment
+		agg.AvgDurationSecondsPerComment = avgDurationPerComment
 
 		// calc avg total lines changed per pull request
 		avgTotalLinesChanged, err := stats.Mean(totalLinesChange)
@@ -147,6 +163,11 @@ func NewPullRequestAggregation() *cli.Command {
 				Value: "",
 				Usage: "the raw pull request information file as CSV",
 			},
+			&cli.StringFlag{
+				Name:  "agg-window",
+				Value: "week",
+				Usage: "the raw pull request information file as CSV, supports (day|week|month)",
+			},
 		},
 		Subcommands: []*cli.Command{
 			{
@@ -163,7 +184,7 @@ func NewPullRequestAggregation() *cli.Command {
 						return err
 					}
 
-					aggs, err := NewPullRequestPerformanceAggregation(ms)
+					aggs, err := NewPullRequestPerformanceAggregation(c.String("agg-window"), ms)
 					if err != nil {
 						return err
 					}
