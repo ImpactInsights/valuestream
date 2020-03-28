@@ -6,44 +6,43 @@ import (
 	"github.com/ImpactInsights/valuestream/cmd/vsperformancereport/metrics"
 	vsgh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/gocarina/gocsv"
-	"github.com/google/go-github/github"
-	log "github.com/sirupsen/logrus"
+	"github.com/shurcooL/githubv4"
 	"github.com/urfave/cli/v2"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 )
 
-func NewPullRequestPerformanceMetric(pr *github.PullRequest) metrics.PullRequestPerformanceMetric {
+func NewPullRequestPerformanceMetric(repo vsgh.Repository, pr vsgh.PullRequest) metrics.PullRequestPerformanceMetric {
 	// TODO nil checks
-	base := pr.GetBase()
-	repo := base.GetRepo()
-	merged := pr.GetMerged()
 	m := metrics.PullRequestPerformanceMetric{
-		Owner:        repo.GetOwner().GetLogin(),
-		Repo:         repo.GetName(),
-		CreatedAt:    pr.GetCreatedAt(),
-		Merged:       merged,
-		Comments:     pr.GetComments(),
-		Additions:    pr.GetAdditions(),
-		Deletions:    pr.GetDeletions(),
-		TotalChanges: pr.GetAdditions() + pr.GetDeletions(),
+		Owner:        repo.Login,
+		Repo:         repo.Name,
+		CreatedAt:    pr.CreatedAt,
+		Merged:       pr.Merged,
+		Comments:     pr.Comments.TotalCount,
+		Additions:    pr.Additions,
+		Deletions:    pr.Deletions,
+		TotalChanges: pr.Additions + pr.Deletions,
 	}
-
-	var d time.Duration
 
 	// if this was merged use the mergedAt - CreatedAt
-	if merged {
-		d = pr.GetMergedAt().Sub(pr.GetCreatedAt())
-	} else {
-		d = pr.GetClosedAt().Sub(pr.GetCreatedAt())
+	var duration *float64
+
+	if pr.Merged {
+		d := pr.MergedAt.Sub(pr.CreatedAt).Seconds()
+		duration = &d
+	} else if pr.Closed {
+		d := pr.ClosedAt.Sub(pr.CreatedAt).Seconds()
+		duration = &d
 	}
 
-	m.DurationSeconds = d.Seconds()
+	if duration != nil {
+		m.DurationSeconds = duration
+		m.DurationPerComment = float64(m.Comments) / *m.DurationSeconds
+		m.DurationPerLine = float64(m.TotalChanges) / *m.DurationSeconds
+	}
 
-	m.DurationPerComment = float64(m.Comments) / m.DurationSeconds
-	m.DurationPerLine = float64(m.TotalChanges) / m.DurationSeconds
 	return m
 }
 
@@ -70,8 +69,13 @@ func NewGithubCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:  "pr-state",
-				Value: "closed",
-				Usage: "PRs to query",
+				Value: "MERGED",
+				Usage: "PRs to query: \"CLOSED|MERGED|OPEN\"",
+			},
+			&cli.StringFlag{
+				Name:  "out",
+				Value: "STDOUT",
+				Usage: "File to write output to",
 			},
 		},
 		Subcommands: []*cli.Command{
@@ -86,91 +90,13 @@ func NewGithubCommand() *cli.Command {
 						Name:  "max-page",
 						Value: 1,
 					},
-					&cli.StringFlag{
-						Name:  "out",
-						Value: "STDOUT",
-						Usage: "File to write output to",
-					},
 				},
 				Action: func(c *cli.Context) error {
-					ctx := context.Background()
-
-					signalChan := make(chan os.Signal, 1)
-					signal.Notify(signalChan, os.Interrupt)
-
-					org := c.String("org")
-					accessToken := c.String("access-token")
-					maxPage := c.Int("max-page")
-					outFilePath := c.String("out")
-
-					// get the output file
-					out := os.Stdout
-					if outFilePath != "STDOUT" {
-						var err error
-						out, err = os.Create(outFilePath)
-						if err != nil {
-							return err
-						}
-						defer out.Close()
-					}
-
-					client := vsgh.NewClient(ctx, accessToken)
-					page := 1
-					last := "unknown"
-
-					limiter := time.NewTicker(500 * time.Millisecond)
-					plan := vsgh.NewPRQueryPlan()
-					for {
-						log.WithFields(log.Fields{
-							"page": page,
-							"last": last,
-						}).Infof("Repos.List")
-
-						repos, resp, err := client.Repositories.List(
-							ctx,
-							org,
-							&github.RepositoryListOptions{
-								Visibility: c.String("visibility"),
-								ListOptions: github.ListOptions{
-									PerPage: c.Int("per-page"),
-									Page:    page,
-								},
-							},
-						)
-
-						last = strconv.Itoa(resp.LastPage)
-
-						if err != nil {
-							return err
-						}
-
-						fmt.Println(resp.Rate)
-
-						for _, repo := range repos {
-							plan.AddRepo(repo.GetName())
-						}
-
-						if page == maxPage || page == resp.LastPage {
-							log.Infof("max page: %d reached", maxPage)
-							break
-						}
-
-						page++
-
-						select {
-						case <-limiter.C:
-							continue
-						case <-signalChan:
-							return fmt.Errorf("killed")
-						}
-					}
-
-					plan.Write(out)
 					return nil
 				},
 			},
 			{
-				Name: "execute",
+				Name: "pull-requests",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "event-type",
@@ -182,23 +108,21 @@ func NewGithubCommand() *cli.Command {
 						Value: "",
 						Usage: "an individual repo",
 					},
-					&cli.IntFlag{
-						Name:  "max-page-per-repo",
-						Value: 1000000,
-						Usage: "max page to pull results from",
-					},
 				},
 				Action: func(c *cli.Context) error {
 					ctx := context.Background()
 
 					signalChan := make(chan os.Signal, 1)
 					signal.Notify(signalChan, os.Interrupt)
-
+					accessToken := c.String("access-token")
 					org := c.String("org")
 					repo := c.String("repo")
-					accessToken := c.String("access-token")
-					maxPage := c.Int("max-page-per-repo")
+					/*
+						maxPage := c.Int("-per-repo")
+					*/
+					perPage := c.Int("per-page")
 					outFilePath := c.String("out")
+					prState := c.String("pr-state")
 
 					// get the output file
 					out := os.Stdout
@@ -213,62 +137,46 @@ func NewGithubCommand() *cli.Command {
 
 					client := vsgh.NewClient(ctx, accessToken)
 
-					page := 1
-					last := "unknown"
-
 					var metrics []metrics.PullRequestPerformanceMetric
-					for {
-						log.WithFields(log.Fields{
-							"page": page,
-							"last": last,
-						}).Infof("PullRequests.List")
+					var q vsgh.PullRequestForRepoQueryV4
+					variables := map[string]interface{}{
+						"login": githubv4.String(org),
+						"repo":  githubv4.String(repo),
+						"state": []githubv4.PullRequestState{
+							githubv4.PullRequestState(prState),
+						},
+						"perPage":        githubv4.Int(perPage),
+						"commentsCursor": (*githubv4.String)(nil),
+					}
 
-						prs, resp, err := client.PullRequests.List(
-							ctx,
-							org,
-							repo,
-							&github.PullRequestListOptions{
-								State: "closed",
-								ListOptions: github.ListOptions{
-									PerPage: c.Int("per-page"),
-									Page:    page,
-								},
-							},
-						)
-						if err != nil {
+					limiter := time.NewTicker(500 * time.Millisecond)
+					for {
+						if err := client.Query(context.Background(), &q, variables); err != nil {
 							return err
 						}
-						last = strconv.Itoa(resp.LastPage)
 
-						limiter := time.NewTicker(500 * time.Millisecond)
-						for i, pr := range prs {
-							log.WithFields(log.Fields{
-								"curr": i,
-								"last": len(prs),
-							}).Infof("PullRequests.Get")
-
-							// get the individual PR
-							directPR, _, err := client.PullRequests.Get(ctx, org, repo, pr.GetNumber())
-							if err != nil {
-								return err
-							}
-
-							metrics = append(metrics, NewPullRequestPerformanceMetric(directPR))
-
-							select {
-							case <-limiter.C:
-								continue
-							case <-signalChan:
-								return fmt.Errorf("killed")
-							}
+						for _, pr := range q.Organization.Repository.PullRequests.Nodes {
+							metrics = append(metrics, NewPullRequestPerformanceMetric(
+								vsgh.Repository{
+									Name:  q.Organization.Repository.Name,
+									Login: q.Organization.Repository.Owner.Login,
+								},
+								pr,
+							))
 						}
 
-						if page == maxPage || page == resp.LastPage {
-							log.Infof("max page: %d reached", maxPage)
+						if !q.Organization.Repository.PullRequests.PageInfo.HasNextPage {
 							break
 						}
 
-						page++
+						variables["commentsCursor"] = q.Organization.Repository.PullRequests.PageInfo.EndCursor
+
+						select {
+						case <-limiter.C:
+							continue
+						case <-signalChan:
+							return fmt.Errorf("killed")
+						}
 					}
 
 					if err := gocsv.Marshal(metrics, out); err != nil {

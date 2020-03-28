@@ -23,6 +23,8 @@ require (
 	github.com/prometheus/procfs v0.0.3 // indirect
 	github.com/rs/xid v1.2.1
 	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/shurcooL/githubv4 v0.0.0-20191127044304-8f68eb5628d0
+	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0
@@ -33,9 +35,8 @@ require (
 	github.com/xanzy/go-gitlab v0.22.3-0.20200102103816-06240ff74b1b
 	go.opencensus.io v0.22.2
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/oauth2 v0.0.0-20181106182150-f42d05182288
-	golang.org/x/sys v0.0.0-20190712062909-fae7ac547cb7 // indirect
 	golang.org/x/tools v0.0.0-20190719005602-e377ae9d6386 // indirect
 	google.golang.org/grpc v1.22.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect

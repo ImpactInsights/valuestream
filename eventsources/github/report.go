@@ -2,55 +2,13 @@ package github
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/google/go-github/github"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
-	"io"
 	"net/http"
+	"time"
 )
 
-// ability to pull all Pull Requests from a repo
-
-// Need the ability to pull ALL repos or a list of repos
-
-// Rate limit of 5000 requests / hour, so need a state file or something that can be resumed
-
-// Build a list of all Repos and Pull Requests
-
-type PRQueryPlan struct {
-	Repos map[string]PullRequestPlan
-}
-
-
-func (p *PRQueryPlan) AddRepo(name string) {
-	p.Repos[name] = struct{}{}
-}
-
-func NewPRQueryPlan() *PRQueryPlan {
-	return &PRQueryPlan{
-		Repos: make(map[string]PullRequestPlan),
-	}
-}
-
-type PullRequestPlan struct {
-	Repo string
-
-
-}
-
-func (p *PRQueryPlan) Write(w io.Writer) error {
-	bs, err := json.MarshalIndent(p, "", "  ")
-	if err != nil {
-		return err
-	}
-	if _, err := w.Write(bs); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func NewClient(ctx context.Context, accessToken string) *github.Client {
+func NewClient(ctx context.Context, accessToken string) *githubv4.Client {
 	var tc *http.Client
 	if accessToken != "" {
 		ts := oauth2.StaticTokenSource(
@@ -59,5 +17,91 @@ func NewClient(ctx context.Context, accessToken string) *github.Client {
 		tc = oauth2.NewClient(ctx, ts)
 	}
 
-	return github.NewClient(tc)
+	return githubv4.NewClient(tc)
+}
+
+/*
+{
+  organization(login: $orgName) {
+    repositories(first: 10) {
+      totalCount
+      edges {
+    		cursor
+        node {
+          name
+          pullRequests(states: CLOSED, last: 100) {
+            nodes {
+              number
+              mergedAt
+              comments {
+                totalCount
+              }
+              additions
+              deletions
+            }
+          }
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
+*/
+
+type PullRequest struct {
+	Number    int
+	CreatedAt time.Time
+	MergedAt  time.Time
+	ClosedAt  time.Time
+	Merged    bool
+	Closed    bool
+	Comments  struct {
+		TotalCount int
+	}
+	Additions int
+	Deletions int
+}
+
+type Repository struct {
+	Name  string
+	Login string
+}
+
+type PullRequestForRepoQueryV4 struct {
+	Organization struct {
+		Repository struct {
+			Name  string
+			Owner struct {
+				Login string
+			}
+			PullRequests struct {
+				PageInfo struct {
+					EndCursor   githubv4.String
+					HasNextPage bool
+				}
+				Nodes []PullRequest
+			} `graphql:"pullRequests(states: $state, first: $perPage, orderBy: {field: UPDATED_AT, direction: DESC}, after: $commentsCursor)"`
+		} `graphql:"repository(name: $repo)"`
+	} `graphql:"organization(login: $login)"`
+}
+
+type PullRequestQueryV4 struct {
+	Organization struct {
+		Repositories struct {
+			TotalCount int
+			PageInfo   struct {
+				EndCursor   string
+				HasNextPage bool
+			}
+			Edges []struct {
+				Cursor string
+				Node   struct {
+					Name string
+				}
+			}
+		} `graphql:"repositories(first: 100)"`
+	} `graphql:"organization(login: $login)"`
 }
