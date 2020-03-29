@@ -71,21 +71,19 @@ type Repository struct {
 }
 
 type PullRequestForRepoQueryV4 struct {
-	Organization struct {
-		Repository struct {
-			Name  string
-			Owner struct {
-				Login string
+	Repository struct {
+		Name  string
+		Owner struct {
+			Login string
+		}
+		PullRequests struct {
+			PageInfo struct {
+				EndCursor   githubv4.String
+				HasNextPage bool
 			}
-			PullRequests struct {
-				PageInfo struct {
-					EndCursor   githubv4.String
-					HasNextPage bool
-				}
-				Nodes []PullRequest
-			} `graphql:"pullRequests(states: $state, first: $perPage, orderBy: {field: UPDATED_AT, direction: DESC}, after: $commentsCursor)"`
-		} `graphql:"repository(name: $repo)"`
-	} `graphql:"organization(login: $login)"`
+			Nodes []PullRequest
+		} `graphql:"pullRequests(states: $state, first: $perPage, orderBy: {field: UPDATED_AT, direction: DESC}, after: $commentsCursor)"`
+	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
 type PullRequestQueryV4 struct {

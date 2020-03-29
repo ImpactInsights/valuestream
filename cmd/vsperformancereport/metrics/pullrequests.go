@@ -18,13 +18,13 @@ type PullRequestPerformanceMetric struct {
 	Merged    bool      `csv:"merged"`
 	// Duration will use time to merged, if not will use
 	// time to cosed
-	DurationSeconds    *float64 `csv:"duration"`
-	Comments           int      `csv:"comments"`
-	Additions          int      `csv:"additions"`
-	Deletions          int      `csv:"deletions"`
-	TotalChanges       int      `csv:"total_changes"`
-	DurationPerComment float64  `csv:"duration_per_comment"`
-	DurationPerLine    float64  `csv:"duration_per_line"`
+	DurationSeconds    float64 `csv:"duration"`
+	Comments           int     `csv:"comments"`
+	Additions          int     `csv:"additions"`
+	Deletions          int     `csv:"deletions"`
+	TotalChanges       int     `csv:"total_changes"`
+	DurationPerComment float64 `csv:"duration_per_comment"`
+	DurationPerLine    float64 `csv:"duration_per_line"`
 }
 
 type PullRequestPerformanceAggregate struct {
@@ -92,9 +92,7 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		var durationsPerComment []float64
 		var totalLinesChange []float64
 		for _, m := range metrics {
-			if m.DurationSeconds != nil {
-				durations = append(durations, *m.DurationSeconds)
-			}
+			durations = append(durations, m.DurationSeconds)
 			durationsPerLine = append(durationsPerLine, m.DurationPerLine)
 			durationsPerComment = append(durationsPerComment, m.DurationPerComment)
 			totalLinesChange = append(totalLinesChange, float64(m.TotalChanges))

@@ -7,6 +7,7 @@ import (
 	vsgh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/gocarina/gocsv"
 	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"os"
 	"os/signal"
@@ -27,21 +28,17 @@ func NewPullRequestPerformanceMetric(repo vsgh.Repository, pr vsgh.PullRequest) 
 	}
 
 	// if this was merged use the mergedAt - CreatedAt
-	var duration *float64
+	lastAction := time.Now().UTC()
 
 	if pr.Merged {
-		d := pr.MergedAt.Sub(pr.CreatedAt).Seconds()
-		duration = &d
+		lastAction = pr.MergedAt
 	} else if pr.Closed {
-		d := pr.ClosedAt.Sub(pr.CreatedAt).Seconds()
-		duration = &d
+		lastAction = pr.ClosedAt
 	}
 
-	if duration != nil {
-		m.DurationSeconds = duration
-		m.DurationPerComment = float64(m.Comments) / *m.DurationSeconds
-		m.DurationPerLine = float64(m.TotalChanges) / *m.DurationSeconds
-	}
+	m.DurationSeconds = lastAction.Sub(pr.CreatedAt).Seconds()
+	m.DurationPerComment = float64(m.Comments) / m.DurationSeconds
+	m.DurationPerLine = float64(m.TotalChanges) / m.DurationSeconds
 
 	return m
 }
@@ -80,29 +77,8 @@ func NewGithubCommand() *cli.Command {
 		},
 		Subcommands: []*cli.Command{
 			{
-				Name: "plan",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "visibility",
-						Value: "private",
-					},
-					&cli.IntFlag{
-						Name:  "max-page",
-						Value: 1,
-					},
-				},
-				Action: func(c *cli.Context) error {
-					return nil
-				},
-			},
-			{
 				Name: "pull-requests",
 				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "event-type",
-						Value: "pull-requests",
-						Usage: "the event type to generate a report on",
-					},
 					&cli.StringFlag{
 						Name:  "repo",
 						Value: "",
@@ -117,9 +93,6 @@ func NewGithubCommand() *cli.Command {
 					accessToken := c.String("access-token")
 					org := c.String("org")
 					repo := c.String("repo")
-					/*
-						maxPage := c.Int("-per-repo")
-					*/
 					perPage := c.Int("per-page")
 					outFilePath := c.String("out")
 					prState := c.String("pr-state")
@@ -140,7 +113,7 @@ func NewGithubCommand() *cli.Command {
 					var metrics []metrics.PullRequestPerformanceMetric
 					var q vsgh.PullRequestForRepoQueryV4
 					variables := map[string]interface{}{
-						"login": githubv4.String(org),
+						"owner": githubv4.String(org),
 						"repo":  githubv4.String(repo),
 						"state": []githubv4.PullRequestState{
 							githubv4.PullRequestState(prState),
@@ -150,26 +123,33 @@ func NewGithubCommand() *cli.Command {
 					}
 
 					limiter := time.NewTicker(500 * time.Millisecond)
+					page := 1
 					for {
 						if err := client.Query(context.Background(), &q, variables); err != nil {
 							return err
 						}
 
-						for _, pr := range q.Organization.Repository.PullRequests.Nodes {
+						log.WithFields(log.Fields{
+							"page":    page,
+							"is_last": !q.Repository.PullRequests.PageInfo.HasNextPage,
+						}).Infof("PullRequests.List")
+
+						for _, pr := range q.Repository.PullRequests.Nodes {
 							metrics = append(metrics, NewPullRequestPerformanceMetric(
 								vsgh.Repository{
-									Name:  q.Organization.Repository.Name,
-									Login: q.Organization.Repository.Owner.Login,
+									Name:  q.Repository.Name,
+									Login: q.Repository.Owner.Login,
 								},
 								pr,
 							))
 						}
 
-						if !q.Organization.Repository.PullRequests.PageInfo.HasNextPage {
+						if !q.Repository.PullRequests.PageInfo.HasNextPage {
 							break
 						}
 
-						variables["commentsCursor"] = q.Organization.Repository.PullRequests.PageInfo.EndCursor
+						variables["commentsCursor"] = q.Repository.PullRequests.PageInfo.EndCursor
+						page++
 
 						select {
 						case <-limiter.C:
