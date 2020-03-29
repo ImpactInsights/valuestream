@@ -59,15 +59,10 @@ $ ~/ngrok http 5000
 
 ## CLI
 
-ValueStream offers a CLI for pulling data and generating offline performance reports.  Generating a report requires pulling the raw pull request information from a third-party api (GitHub in this case):
+ValueStream offers a CLI for pulling data and generating offline performance reports.  Generating a report requires pulling the raw pull request information from a third-party api (GitHub in this case). The following command pulls merged prs inbatches of 10 using the GitHub api. Outputs:
 
 ```
-$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -per-page=10 pull-requests -repo=valuestream
-```
-This command pulls 10 of the most recent closed pull requests using the GitHub api.  Outputs:
-
-```
-$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -prs-per-page=10 pull-requests -repo=valuestream
+$ go run cmd/vsperformancereport/main.go github pull-requests -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -prs-per-page=10 -repo=valuestream
 
 INFO[0000] PullRequests.List                             is_last=false page=1
 INFO[0001] PullRequests.List                             is_last=false page=2
