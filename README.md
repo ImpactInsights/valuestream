@@ -62,24 +62,16 @@ $ ~/ngrok http 5000
 ValueStream offers a CLI for pulling data and generating offline performance reports.  Generating a report requires pulling the raw pull request information from a third-party api (GitHub in this case):
 
 ```
-$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -repo=valuestream -per-page=10 -max-page=1 -out=/tmp/vs-prs.csv
+$ $ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -per-page=10 pull-requests -repo=valuestream
 ```
 This command pulls 10 of the most recent closed pull requests using the GitHub api.  Outputs:
 
 ```
-$ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -repo=valuestream -per-page=10 -max-page=1 -out=/tmp/vs-prs.csv
-INFO[0000] PullRequests.List                             last=unknown page=1
-INFO[0000] PullRequests.Get                              curr=0 last=10
-INFO[0001] PullRequests.Get                              curr=1 last=10
-INFO[0001] PullRequests.Get                              curr=2 last=10
-INFO[0002] PullRequests.Get                              curr=3 last=10
-INFO[0002] PullRequests.Get                              curr=4 last=10
-INFO[0003] PullRequests.Get                              curr=5 last=10
-INFO[0003] PullRequests.Get                              curr=6 last=10
-INFO[0004] PullRequests.Get                              curr=7 last=10
-INFO[0004] PullRequests.Get                              curr=8 last=10
-INFO[0005] PullRequests.Get                              curr=9 last=10
-INFO[0005] max page: 1 reached
+$ $ go run cmd/vsperformancereport/main.go github -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -per-page=10 pull-requests -repo=valuestream
+
+INFO[0000] PullRequests.List                             is_last=false page=1
+INFO[0001] PullRequests.List                             is_last=false page=2
+INFO[0001] PullRequests.List                             is_last=true page=3
 ```
 Next is to generate [pull request performance metrics](https://medium.com/valuestream-by-operational-analytics-inc/using-code-review-metrics-as-performance-indicators-caa47a716297):
 
