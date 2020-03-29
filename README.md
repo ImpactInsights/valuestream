@@ -78,12 +78,19 @@ Next is to generate [pull request performance metrics](https://medium.com/values
 ```
 $ go run cmd/vsperformancereport/main.go agg -in=/tmp/vs-prs.csv pull-request
 
-Key,Interval,Owner,Repo,TotalPullRequests,NumMerged,MergeRatio,AvgTotalLinesChanged,AvgDuration,P95Duration,AvgDurationLine,AvgDurationComment
-2020|3_ImpactInsights|valuestream,2020|3,ImpactInsights,valuestream,1,1,1,428,98687,0,0.0043369440757141265,0
-2020|1_ImpactInsights|valuestream,2020|1,ImpactInsights,valuestream,3,2,0.67,84.66666666666667,3675.3333333333335,0,0.049723958097649984,0.00022528174109838546
-2019|50_ImpactInsights|valuestream,2019|50,ImpactInsights,valuestream,1,1,1,665,8565,0,0.07764156450671336,0.0002335084646818447
-2019|49_ImpactInsights|valuestream,2019|49,ImpactInsights,valuestream,2,2,1,220,251010,0,0.5457733277063436,0.004546450739991414
-2019|47_ImpactInsights|valuestream,2019|47,ImpactInsights,valuestream,3,3,1,2267.3333333333335,57137.666666666664,0,20.19594165433617,0
+Key,Interval,Owner,Repo,TotalPullRequests,NumMerged,MergeRatio,AvgTotalLinesChanged,AvgDurationHours,AvgDurationSecondsPerLine,AvgDurationSecondsPerComment
+2020|3_ImpactInsights|valuestream,2020|3,ImpactInsights,valuestream,1,1,1,428,27.413055555555555,0.0043369440757141265,0
+2020|1_ImpactInsights|valuestream,2020|1,ImpactInsights,valuestream,2,2,1,124.5,1.5090277777777779,0.059057986835915975,0.0003379226116475782
+2019|50_ImpactInsights|valuestream,2019|50,ImpactInsights,valuestream,1,1,1,665,2.379166666666667,0.07764156450671336,0.0002335084646818447
+2019|45_ImpactInsights|valuestream,2019|45,ImpactInsights,valuestream,1,1,1,990,3.582222222222222,0.07676799007444168,0
+2019|44_ImpactInsights|valuestream,2019|44,ImpactInsights,valuestream,2,2,1,650,1.6791666666666667,0.10508914743090743,0
+2019|43_ImpactInsights|valuestream,2019|43,ImpactInsights,valuestream,1,1,1,767,55.071666666666665,0.0038686963451663994,0
+2019|33_ImpactInsights|valuestream,2019|33,ImpactInsights,valuestream,1,1,1,22,0.0038888888888888888,1.5714285714285714,0
+2019|32_ImpactInsights|valuestream,2019|32,ImpactInsights,valuestream,4,4,1,95.75,2.977013888888889,1.534402390117196,0
+2020|13_ImpactInsights|valuestream,2020|13,ImpactInsights,valuestream,1,1,1,368,1.5027777777777778,0.06802218114602587,0
+2019|49_ImpactInsights|valuestream,2019|49,ImpactInsights,valuestream,2,2,1,220,69.725,0.5457733277063436,0.004546450739991414
+2019|47_ImpactInsights|valuestream,2019|47,ImpactInsights,valuestream,3,3,1,2267.3333333333335,15.871574074074074,20.19594165433617,0
+2019|46_ImpactInsights|valuestream,2019|46,ImpactInsights,valuestream,3,3,1,212.33333333333334,0.42185185185185187,20.710602136850614,0
 ```
 These can be easily visualized using any spreadsheet:
 
