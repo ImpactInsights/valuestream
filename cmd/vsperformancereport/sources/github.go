@@ -64,6 +64,11 @@ func NewGithubCommand() *cli.Command {
 				Value: 100,
 				Usage: "number of results to pull per page",
 			},
+			&cli.IntFlag{
+				Name:  "max-records",
+				Value: 500,
+				Usage: "Max number of records to pull",
+			},
 			&cli.StringFlag{
 				Name:  "pr-state",
 				Value: "MERGED",
@@ -84,6 +89,11 @@ func NewGithubCommand() *cli.Command {
 						Value: "",
 						Usage: "an individual repo",
 					},
+					&cli.DurationFlag{
+						Name:  "wait-between-requests",
+						Value: 2500 * time.Millisecond,
+						Usage: "Duration to wait between requests, defaults to 2.5seconds",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					ctx := context.Background()
@@ -96,6 +106,7 @@ func NewGithubCommand() *cli.Command {
 					perPage := c.Int("per-page")
 					outFilePath := c.String("out")
 					prState := c.String("pr-state")
+					maxRecords := c.Int("max-records")
 
 					// get the output file
 					out := os.Stdout
@@ -122,10 +133,15 @@ func NewGithubCommand() *cli.Command {
 						"commentsCursor": (*githubv4.String)(nil),
 					}
 
-					limiter := time.NewTicker(500 * time.Millisecond)
+					limiter := time.NewTicker(c.Duration("wait-between-requests"))
 					page := 1
+					numRecords := 0
 					for {
 						if err := client.Query(context.Background(), &q, variables); err != nil {
+							if err := gocsv.Marshal(metrics, out); err != nil {
+								return err
+							}
+
 							return err
 						}
 
@@ -133,6 +149,8 @@ func NewGithubCommand() *cli.Command {
 							"page":    page,
 							"is_last": !q.Repository.PullRequests.PageInfo.HasNextPage,
 						}).Infof("PullRequests.List")
+
+						numRecords += len(q.Repository.PullRequests.Nodes)
 
 						for _, pr := range q.Repository.PullRequests.Nodes {
 							metrics = append(metrics, NewPullRequestPerformanceMetric(
@@ -142,6 +160,11 @@ func NewGithubCommand() *cli.Command {
 								},
 								pr,
 							))
+						}
+
+						if numRecords >= maxRecords {
+							log.Infof("Max records reached: %d", maxRecords)
+							break
 						}
 
 						if !q.Repository.PullRequests.PageInfo.HasNextPage {
