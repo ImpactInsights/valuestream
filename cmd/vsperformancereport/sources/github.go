@@ -60,9 +60,14 @@ func NewGithubCommand() *cli.Command {
 				EnvVars: []string{"VS_PERF_REPORT_GITHUB_ACCESS_TOKEN"},
 			},
 			&cli.IntFlag{
-				Name:  "per-page",
+				Name:  "prs-per-page",
 				Value: 100,
-				Usage: "number of results to pull per page",
+				Usage: "number of pr results to pull per page",
+			},
+			&cli.IntFlag{
+				Name:  "repos-per-page",
+				Value: 100,
+				Usage: "number of repos results to pull per page",
 			},
 			&cli.IntFlag{
 				Name:  "max-records",
@@ -87,7 +92,7 @@ func NewGithubCommand() *cli.Command {
 					&cli.StringFlag{
 						Name:  "repo",
 						Value: "",
-						Usage: "an individual repo",
+						Usage: "an individual repo or * for all repos",
 					},
 					&cli.DurationFlag{
 						Name:  "wait-between-requests",
@@ -103,10 +108,11 @@ func NewGithubCommand() *cli.Command {
 					accessToken := c.String("access-token")
 					org := c.String("org")
 					repo := c.String("repo")
-					perPage := c.Int("per-page")
+					prsPerPage := c.Int("prs-per-page")
 					outFilePath := c.String("out")
 					prState := c.String("pr-state")
 					maxRecords := c.Int("max-records")
+					reposPerPage := c.Int("repos-per-page")
 
 					// get the output file
 					out := os.Stdout
@@ -122,20 +128,83 @@ func NewGithubCommand() *cli.Command {
 					client := vsgh.NewClient(ctx, accessToken)
 
 					var metrics []metrics.PullRequestPerformanceMetric
-					var q vsgh.PullRequestForRepoQueryV4
+
+					limiter := time.NewTicker(c.Duration("wait-between-requests"))
+					page := 1
+					numRecords := 0
+
+					if repo == "*" {
+						variables := map[string]interface{}{
+							"owner": githubv4.String(org),
+							"state": []githubv4.PullRequestState{
+								githubv4.PullRequestState(prState),
+							},
+							"reposPerPage": githubv4.Int(reposPerPage),
+							"prsPerPage":   githubv4.Int(prsPerPage),
+							"reposCursor":  (*githubv4.String)(nil),
+						}
+
+						var q vsgh.PullRequestQueryV4
+
+						for {
+							if err := client.Query(context.Background(), &q, variables); err != nil {
+								if err := gocsv.Marshal(metrics, out); err != nil {
+									return err
+								}
+
+								return err
+							}
+
+							log.WithFields(log.Fields{
+								"page":    page,
+								"is_last": !q.HasNextPage(),
+							}).Infof("Repositories.List")
+
+							for _, repo := range q.Organization.Repositories.Edges {
+								r := vsgh.Repository{
+									Name:  repo.Node.Name,
+									Login: org,
+								}
+
+								for _, pr := range repo.Node.PullRequests.Nodes {
+									metrics = append(metrics, NewPullRequestPerformanceMetric(r, pr))
+								}
+
+								page++
+							}
+
+							if page*reposPerPage == maxRecords {
+								break
+							}
+
+							variables["reposCursor"] = q.Organization.Repositories.PageInfo.EndCursor
+
+							select {
+							case <-limiter.C:
+								continue
+							case <-signalChan:
+								return fmt.Errorf("killed")
+							}
+						}
+
+						if err := gocsv.Marshal(metrics, out); err != nil {
+							return err
+						}
+
+						return nil
+					}
+
 					variables := map[string]interface{}{
 						"owner": githubv4.String(org),
 						"repo":  githubv4.String(repo),
 						"state": []githubv4.PullRequestState{
 							githubv4.PullRequestState(prState),
 						},
-						"perPage":        githubv4.Int(perPage),
-						"commentsCursor": (*githubv4.String)(nil),
+						"prsPerPage": githubv4.Int(prsPerPage),
+						"prsCursor":  (*githubv4.String)(nil),
 					}
 
-					limiter := time.NewTicker(c.Duration("wait-between-requests"))
-					page := 1
-					numRecords := 0
+					var q vsgh.PullRequestForRepoQueryV4
 					for {
 						if err := client.Query(context.Background(), &q, variables); err != nil {
 							if err := gocsv.Marshal(metrics, out); err != nil {
@@ -171,7 +240,7 @@ func NewGithubCommand() *cli.Command {
 							break
 						}
 
-						variables["commentsCursor"] = q.Repository.PullRequests.PageInfo.EndCursor
+						variables["prsCursor"] = q.Repository.PullRequests.PageInfo.EndCursor
 						page++
 
 						select {

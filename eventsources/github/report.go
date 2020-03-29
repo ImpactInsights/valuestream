@@ -82,7 +82,7 @@ type PullRequestForRepoQueryV4 struct {
 				HasNextPage bool
 			}
 			Nodes []PullRequest
-		} `graphql:"pullRequests(states: $state, first: $perPage, orderBy: {field: UPDATED_AT, direction: DESC}, after: $commentsCursor)"`
+		} `graphql:"pullRequests(states: $state, first: $prsPerPage, orderBy: {field: UPDATED_AT, direction: DESC}, after: $prsCursor)"`
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
@@ -91,15 +91,22 @@ type PullRequestQueryV4 struct {
 		Repositories struct {
 			TotalCount int
 			PageInfo   struct {
-				EndCursor   string
+				EndCursor   githubv4.String
 				HasNextPage bool
 			}
 			Edges []struct {
 				Cursor string
 				Node   struct {
-					Name string
+					Name         string
+					PullRequests struct {
+						Nodes []PullRequest
+					} `graphql:"pullRequests(states: $state, first: $prsPerPage, orderBy: {field: UPDATED_AT, direction: DESC})"`
 				}
 			}
-		} `graphql:"repositories(first: 100)"`
-	} `graphql:"organization(login: $login)"`
+		} `graphql:"repositories(first: $reposPerPage, after: $reposCursor)"`
+	} `graphql:"organization(login: $owner)"`
+}
+
+func (p PullRequestQueryV4) HasNextPage() bool {
+	return p.Organization.Repositories.PageInfo.HasNextPage
 }
