@@ -86,6 +86,32 @@ type PullRequestForRepoQueryV4 struct {
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
+func (p PullRequestForRepoQueryV4) HasNextPage() bool {
+	return p.Repository.PullRequests.PageInfo.HasNextPage
+}
+
+type ReposQueryV4 struct {
+	Organization struct {
+		Repositories struct {
+			TotalCount int
+			Nodes      []struct {
+				Name  string
+				Owner struct {
+					Login string
+				}
+			}
+			PageInfo struct {
+				EndCursor   githubv4.String
+				HasNextPage bool
+			}
+		} `graphql:"repositories(first: $reposPerPage, after: $reposCursor)"`
+	} `graphql:"organization(login: $owner)"`
+}
+
+func (p ReposQueryV4) HasNextPage() bool {
+	return p.Organization.Repositories.PageInfo.HasNextPage
+}
+
 type PullRequestQueryV4 struct {
 	Organization struct {
 		Repositories struct {
