@@ -213,8 +213,10 @@ func NewPullRequestPerformanceMetric(repo vsgh.Repository, pr vsgh.PullRequest) 
 	}
 
 	m.DurationSeconds = lastAction.Sub(pr.CreatedAt).Seconds()
-	m.DurationPerComment = float64(m.Comments) / m.DurationSeconds
-	m.DurationPerLine = float64(m.TotalChanges) / m.DurationSeconds
+	if m.Comments > 0 {
+		m.DurationPerComment = m.DurationSeconds / float64(m.Comments)
+	}
+	m.DurationPerLine = m.DurationSeconds / float64(m.TotalChanges)
 
 	return m
 }

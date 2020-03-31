@@ -3,6 +3,7 @@ package metrics
 import (
 	"fmt"
 	"github.com/gocarina/gocsv"
+	"github.com/jinzhu/now"
 	"github.com/montanaflynn/stats"
 	"github.com/urfave/cli/v2"
 	"math"
@@ -30,6 +31,7 @@ type PullRequestPerformanceMetric struct {
 type PullRequestPerformanceAggregate struct {
 	Key                          string
 	Interval                     string
+	UnixTime                     int64
 	Owner                        string
 	Repo                         string
 	TotalPullRequests            int
@@ -39,39 +41,45 @@ type PullRequestPerformanceAggregate struct {
 	AvgDurationHours             float64
 	AvgDurationSecondsPerLine    float64
 	AvgDurationSecondsPerComment float64
+	AvgNumberOfComments          float64
 }
 
-func intervalToKey(i string, createdAt time.Time) (string, error) {
+func intervalToKey(i string, createdAt time.Time) (time.Time, error) {
 	switch i {
 	case "day":
-		year, month, day := createdAt.Date()
-		return fmt.Sprintf("%d|%d|%d", year, month, day), nil
+		return now.With(createdAt).BeginningOfDay(), nil
 	case "week":
-		year, week := createdAt.ISOWeek()
-		return fmt.Sprintf("%d|%d", year, week), nil
+		return now.With(createdAt).BeginningOfWeek(), nil
 	case "month":
-		year, month, _ := createdAt.Date()
-		return fmt.Sprintf("%d|%d", year, month), nil
+		return now.With(createdAt).BeginningOfMonth(), nil
 	}
-	return "", fmt.Errorf("interval: %s not supported", i)
+	return time.Now(), fmt.Errorf("interval: %s not supported", i)
+}
+
+type PRBucketEntry struct {
+	Time time.Time
+	PR   PullRequestPerformanceMetric
 }
 
 func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
 	// by default aggregate by week
-	bucketed := make(map[string][]PullRequestPerformanceMetric)
+	bucketed := make(map[string][]PRBucketEntry)
 
 	for _, pr := range ms {
-		intervalKey, err := intervalToKey(aggInterval, pr.CreatedAt)
+		interval, err := intervalToKey(aggInterval, pr.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		key := fmt.Sprintf(
 			"%s_%s|%s",
-			intervalKey,
+			interval.Format("2006-01-02"),
 			pr.Owner,
 			pr.Repo,
 		)
-		bucketed[key] = append(bucketed[key], pr)
+		bucketed[key] = append(bucketed[key], PRBucketEntry{
+			Time: interval,
+			PR:   pr,
+		})
 	}
 
 	var aggs []PullRequestPerformanceAggregate
@@ -82,22 +90,25 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		agg := PullRequestPerformanceAggregate{
 			Interval:          strings.Split(key, "_")[0],
 			Key:               key,
-			Owner:             metrics[0].Owner,
-			Repo:              metrics[0].Repo,
+			Owner:             metrics[0].PR.Owner,
+			Repo:              metrics[0].PR.Repo,
 			TotalPullRequests: len(metrics),
+			UnixTime:          metrics[0].Time.Unix(),
 		}
 
 		var durations []float64
 		var durationsPerLine []float64
 		var durationsPerComment []float64
 		var totalLinesChange []float64
+		var comments []float64
 		for _, m := range metrics {
-			durations = append(durations, m.DurationSeconds)
-			durationsPerLine = append(durationsPerLine, m.DurationPerLine)
-			durationsPerComment = append(durationsPerComment, m.DurationPerComment)
-			totalLinesChange = append(totalLinesChange, float64(m.TotalChanges))
+			durations = append(durations, m.PR.DurationSeconds)
+			durationsPerLine = append(durationsPerLine, m.PR.DurationPerLine)
+			durationsPerComment = append(durationsPerComment, m.PR.DurationPerComment)
+			totalLinesChange = append(totalLinesChange, float64(m.PR.TotalChanges))
+			comments = append(comments, float64(m.PR.Comments))
 
-			if m.Merged {
+			if m.PR.Merged {
 				numMerged++
 			}
 		}
@@ -146,6 +157,13 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 			return nil, err
 		}
 		agg.AvgTotalLinesChanged = avgTotalLinesChanged
+
+		// calculate avg # of comments
+		avgNumComments, err := stats.Mean(comments)
+		if err != nil {
+			return nil, err
+		}
+		agg.AvgNumberOfComments = avgNumComments
 
 		aggs = append(aggs, agg)
 	}
