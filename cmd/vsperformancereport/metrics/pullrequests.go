@@ -8,6 +8,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"math"
 	"os"
+	"sort"
 	"strings"
 	"time"
 )
@@ -42,6 +43,23 @@ type PullRequestPerformanceAggregate struct {
 	AvgDurationSecondsPerLine    float64
 	AvgDurationSecondsPerComment float64
 	AvgNumberOfComments          float64
+	DurationP50RunningHours      float64
+	DurationP95RunningHours      float64
+	DurationP99RunningHours      float64
+}
+
+func (p *PullRequestPerformanceAggregate) RoundAll() {
+	p.AvgTotalLinesChanged = math.Round(p.AvgTotalLinesChanged*10) / 10
+	p.AvgDurationHours = math.Round(p.AvgDurationHours*10) / 10
+	p.AvgDurationSecondsPerLine = math.Round(p.AvgDurationSecondsPerLine*10) / 10
+	p.AvgDurationSecondsPerComment = math.Round(p.AvgDurationSecondsPerComment*10) / 10
+	p.DurationP50RunningHours = math.Round(p.DurationP50RunningHours*10) / 10
+	p.DurationP95RunningHours = math.Round(p.DurationP95RunningHours*10) / 10
+	p.DurationP99RunningHours = math.Round(p.DurationP99RunningHours*10) / 10
+}
+
+func SecondsToHour(seconds float64) float64 {
+	return seconds / (60 * 60) // 60 seconds / 1 minute * 60 minutes / 1 hour
 }
 
 func intervalToKey(i string, createdAt time.Time) (time.Time, error) {
@@ -65,6 +83,11 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 	// by default aggregate by week
 	bucketed := make(map[string][]PRBucketEntry)
 
+	// sort by time ASC to calculate running totals
+	sort.Slice(ms, func(i, j int) bool {
+		return ms[i].CreatedAt.Unix() < ms[j].CreatedAt.Unix()
+	})
+
 	for _, pr := range ms {
 		interval, err := intervalToKey(aggInterval, pr.CreatedAt)
 		if err != nil {
@@ -83,6 +106,7 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 	}
 
 	var aggs []PullRequestPerformanceAggregate
+	var allDurations []float64
 
 	for key, metrics := range bucketed {
 		var numMerged int
@@ -101,15 +125,43 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		var durationsPerComment []float64
 		var totalLinesChange []float64
 		var comments []float64
-		for _, m := range metrics {
+		for i, m := range metrics {
 			durations = append(durations, m.PR.DurationSeconds)
 			durationsPerLine = append(durationsPerLine, m.PR.DurationPerLine)
 			durationsPerComment = append(durationsPerComment, m.PR.DurationPerComment)
 			totalLinesChange = append(totalLinesChange, float64(m.PR.TotalChanges))
 			comments = append(comments, float64(m.PR.Comments))
+			allDurations = append(allDurations, m.PR.DurationSeconds)
 
 			if m.PR.Merged {
 				numMerged++
+			}
+
+			// if this is the last element add the running pX calculations
+			if i == len(metrics)-1 {
+				// calc p50 duration
+				p50Duration, err := stats.Percentile(allDurations, 50)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP50RunningHours = SecondsToHour(p50Duration)
+
+				// calc p95 duration
+				p95Duration, err := stats.Percentile(allDurations, 95)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP95RunningHours = SecondsToHour(p95Duration)
+
+				// calc p99 duration
+				p99Duration, err := stats.Percentile(allDurations, 99)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP99RunningHours = SecondsToHour(p99Duration)
 			}
 		}
 
@@ -125,17 +177,7 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		if err != nil {
 			return nil, err
 		}
-		agg.AvgDurationHours = avgDuration / (60 * 60) // 60 seconds / 1 minute * 60 minutes / 1 hour
-
-		/*
-			// calc p95 duration
-			p95Duration, err := stats.Percentile(durations, 0.95)
-			if err != nil {
-				return nil, err
-			}
-
-			agg.P95Duration = p95Duration
-		*/
+		agg.AvgDurationHours = SecondsToHour(avgDuration)
 
 		// calc avg per line
 		avgDurationPerLine, err := stats.Mean(durationsPerLine)
@@ -164,6 +206,8 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 			return nil, err
 		}
 		agg.AvgNumberOfComments = avgNumComments
+
+		agg.RoundAll()
 
 		aggs = append(aggs, agg)
 	}
