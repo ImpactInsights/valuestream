@@ -47,7 +47,6 @@ type PullRequestPerformanceAggregate struct {
 	DurationP50RunningHours      float64
 	DurationP95RunningHours      float64
 	DurationP99RunningHours      float64
-	Metrics []PullRequestPerformanceMetric
 }
 
 func (p *PullRequestPerformanceAggregate) RoundAll() {
@@ -81,7 +80,7 @@ type PRBucketEntry struct {
 	PR   PullRequestPerformanceMetric
 }
 
-func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix int64, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
+func NewPullRequestPerformanceAggregation(aggInterval string, unixTimeForPercentiles int64, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
 	// by default aggregate by week
 	bucketed := make(map[string][]PRBucketEntry)
 
@@ -111,6 +110,7 @@ func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix
 
 	for key, metrics := range bucketed {
 		var numMerged int
+		var allDurations []float64
 
 		agg := PullRequestPerformanceAggregate{
 			Interval:          strings.Split(key, "_")[0],
@@ -126,7 +126,7 @@ func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix
 		var durationsPerComment []float64
 		var totalLinesChange []float64
 		var comments []float64
-		for _, m := range metrics {
+		for i, m := range metrics {
 			durations = append(durations, m.PR.DurationSeconds)
 			durationsPerLine = append(durationsPerLine, m.PR.DurationPerLine)
 			durationsPerComment = append(durationsPerComment, m.PR.DurationPerComment)
@@ -135,6 +135,36 @@ func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix
 
 			if m.PR.Merged {
 				numMerged++
+			}
+
+			if unixTimeForPercentiles > 0 && m.PR.CreatedAt.Unix() >= unixTimeForPercentiles {
+				allDurations = append(allDurations, m.PR.DurationSeconds)
+			}
+
+			if i == (len(metrics)-1) && unixTimeForPercentiles > 0 && m.Time.Unix() >= unixTimeForPercentiles {
+				// calc p50 duration
+				p50Duration, err := stats.Percentile(allDurations, 50)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP50RunningHours = SecondsToHour(p50Duration)
+
+				// calc p95 duration
+				p95Duration, err := stats.Percentile(allDurations, 95)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP95RunningHours = SecondsToHour(p95Duration)
+
+				// calc p99 duration
+				p99Duration, err := stats.Percentile(allDurations, 99)
+				if err != nil {
+					return nil, err
+				}
+
+				agg.DurationP99RunningHours = SecondsToHour(p99Duration)
 			}
 		}
 
@@ -179,30 +209,6 @@ func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix
 			return nil, err
 		}
 		agg.AvgNumberOfComments = avgNumComments
-
-		// calc p50 duration
-		p50Duration, err := stats.Percentile(durations, 50)
-		if err != nil {
-			return nil, err
-		}
-
-		agg.DurationP50RunningHours = SecondsToHour(p50Duration)
-
-		// calc p95 duration
-		p95Duration, err := stats.Percentile(durations, 95)
-		if err != nil {
-			return nil, err
-		}
-
-		agg.DurationP95RunningHours = SecondsToHour(p95Duration)
-
-		// calc p99 duration
-		p99Duration, err := stats.Percentile(durations, 99)
-		if err != nil {
-			return nil, err
-		}
-
-		agg.DurationP99RunningHours = SecondsToHour(p99Duration)
 
 		agg.RoundAll()
 
