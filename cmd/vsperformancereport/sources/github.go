@@ -6,6 +6,7 @@ import (
 	"github.com/ImpactInsights/valuestream/cmd/vsperformancereport/metrics"
 	vsgh "github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/gocarina/gocsv"
+	"strconv"
 
 	// "github.com/gocarina/gocsv"
 	"github.com/shurcooL/githubv4"
@@ -201,6 +202,7 @@ func NewPullRequestPerformanceMetric(repo vsgh.Repository, pr vsgh.PullRequest) 
 		Additions:    pr.Additions,
 		Deletions:    pr.Deletions,
 		TotalChanges: pr.Additions + pr.Deletions,
+		ID:           strconv.FormatInt(int64(pr.Number), 10),
 	}
 
 	// if this was merged use the mergedAt - CreatedAt

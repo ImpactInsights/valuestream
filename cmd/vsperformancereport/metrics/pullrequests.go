@@ -27,6 +27,7 @@ type PullRequestPerformanceMetric struct {
 	TotalChanges       int     `csv:"total_changes"`
 	DurationPerComment float64 `csv:"duration_per_comment"`
 	DurationPerLine    float64 `csv:"duration_per_line"`
+	ID                 string  `csv"pr_id"`
 }
 
 type PullRequestPerformanceAggregate struct {
@@ -46,6 +47,7 @@ type PullRequestPerformanceAggregate struct {
 	DurationP50RunningHours      float64
 	DurationP95RunningHours      float64
 	DurationP99RunningHours      float64
+	Metrics []PullRequestPerformanceMetric
 }
 
 func (p *PullRequestPerformanceAggregate) RoundAll() {
@@ -79,7 +81,7 @@ type PRBucketEntry struct {
 	PR   PullRequestPerformanceMetric
 }
 
-func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
+func NewPullRequestPerformanceAggregation(aggInterval string, percentilesForUnix int64, ms []PullRequestPerformanceMetric) ([]PullRequestPerformanceAggregate, error) {
 	// by default aggregate by week
 	bucketed := make(map[string][]PRBucketEntry)
 
@@ -106,7 +108,6 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 	}
 
 	var aggs []PullRequestPerformanceAggregate
-	var allDurations []float64
 
 	for key, metrics := range bucketed {
 		var numMerged int
@@ -125,43 +126,15 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		var durationsPerComment []float64
 		var totalLinesChange []float64
 		var comments []float64
-		for i, m := range metrics {
+		for _, m := range metrics {
 			durations = append(durations, m.PR.DurationSeconds)
 			durationsPerLine = append(durationsPerLine, m.PR.DurationPerLine)
 			durationsPerComment = append(durationsPerComment, m.PR.DurationPerComment)
 			totalLinesChange = append(totalLinesChange, float64(m.PR.TotalChanges))
 			comments = append(comments, float64(m.PR.Comments))
-			allDurations = append(allDurations, m.PR.DurationSeconds)
 
 			if m.PR.Merged {
 				numMerged++
-			}
-
-			// if this is the last element add the running pX calculations
-			if i == len(metrics)-1 {
-				// calc p50 duration
-				p50Duration, err := stats.Percentile(allDurations, 50)
-				if err != nil {
-					return nil, err
-				}
-
-				agg.DurationP50RunningHours = SecondsToHour(p50Duration)
-
-				// calc p95 duration
-				p95Duration, err := stats.Percentile(allDurations, 95)
-				if err != nil {
-					return nil, err
-				}
-
-				agg.DurationP95RunningHours = SecondsToHour(p95Duration)
-
-				// calc p99 duration
-				p99Duration, err := stats.Percentile(allDurations, 99)
-				if err != nil {
-					return nil, err
-				}
-
-				agg.DurationP99RunningHours = SecondsToHour(p99Duration)
 			}
 		}
 
@@ -207,6 +180,30 @@ func NewPullRequestPerformanceAggregation(aggInterval string, ms []PullRequestPe
 		}
 		agg.AvgNumberOfComments = avgNumComments
 
+		// calc p50 duration
+		p50Duration, err := stats.Percentile(durations, 50)
+		if err != nil {
+			return nil, err
+		}
+
+		agg.DurationP50RunningHours = SecondsToHour(p50Duration)
+
+		// calc p95 duration
+		p95Duration, err := stats.Percentile(durations, 95)
+		if err != nil {
+			return nil, err
+		}
+
+		agg.DurationP95RunningHours = SecondsToHour(p95Duration)
+
+		// calc p99 duration
+		p99Duration, err := stats.Percentile(durations, 99)
+		if err != nil {
+			return nil, err
+		}
+
+		agg.DurationP99RunningHours = SecondsToHour(p99Duration)
+
 		agg.RoundAll()
 
 		aggs = append(aggs, agg)
@@ -230,6 +227,11 @@ func NewPullRequestAggregation() *cli.Command {
 				Value: "week",
 				Usage: "the raw pull request information file as CSV, supports (day|week|month)",
 			},
+			&cli.Int64Flag{
+				Name:  "calc-percentiles-gte-unix",
+				Value: 0,
+				Usage: "Unix timestamp, will calculate running percentiles for any aggregations greater-than or equal-to this date",
+			},
 		},
 		Subcommands: []*cli.Command{
 			{
@@ -246,7 +248,11 @@ func NewPullRequestAggregation() *cli.Command {
 						return err
 					}
 
-					aggs, err := NewPullRequestPerformanceAggregation(c.String("agg-window"), ms)
+					aggs, err := NewPullRequestPerformanceAggregation(
+						c.String("agg-window"),
+						c.Int64("calc-percentiles-gte-unix"),
+						ms,
+					)
 					if err != nil {
 						return err
 					}
