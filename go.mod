@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.1.0
+	github.com/DataDog/datadog-go v3.5.0+incompatible // indirect
 	github.com/andygrunwald/go-jira v1.11.1
 	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20191214001331-e6697589f2e0
@@ -18,6 +19,7 @@ require (
 	github.com/montanaflynn/stats v0.5.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/opentracing/opentracing-go v1.1.0
+	github.com/philhofer/fwd v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/common v0.6.0
@@ -29,6 +31,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0
+	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/uber/jaeger-client-go v2.16.0+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible // indirect
 	github.com/urfave/cli v1.22.2
@@ -38,7 +41,10 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/oauth2 v0.0.0-20181106182150-f42d05182288
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20190719005602-e377ae9d6386 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/grpc v1.22.0 // indirect
+	gopkg.in/DataDog/dd-trace-go.v1 v1.23.0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
