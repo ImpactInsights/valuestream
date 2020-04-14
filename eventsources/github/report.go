@@ -5,6 +5,7 @@ import (
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -56,6 +57,7 @@ type PullRequest struct {
 	CreatedAt time.Time
 	MergedAt  time.Time
 	ClosedAt  time.Time
+	UpdatedAt time.Time
 	Merged    bool
 	Closed    bool
 	Comments  struct {
@@ -63,6 +65,30 @@ type PullRequest struct {
 	}
 	Additions int
 	Deletions int
+	Author    struct {
+		Login string
+	}
+	Url            string
+	Title          string
+	ReviewRequests struct {
+		Nodes []struct {
+			RequestedReviewer struct {
+				User struct {
+					Login string
+				} `graphql:"... on User"`
+			}
+		}
+	} `graphql:"reviewRequests(first: 10)"`
+}
+
+func (p PullRequest) Reviewers() string {
+	var reviewers []string
+	for i := 0; i < len(p.ReviewRequests.Nodes); i++ {
+		r := p.ReviewRequests.Nodes[i].RequestedReviewer
+		reviewers = append(reviewers, r.User.Login)
+	}
+
+	return strings.Join(reviewers, "|")
 }
 
 type Repository struct {

@@ -20,14 +20,21 @@ type PullRequestPerformanceMetric struct {
 	Merged    bool      `csv:"merged"`
 	// Duration will use time to merged, if not will use
 	// time to cosed
-	DurationSeconds    float64 `csv:"duration"`
-	Comments           int     `csv:"comments"`
-	Additions          int     `csv:"additions"`
-	Deletions          int     `csv:"deletions"`
-	TotalChanges       int     `csv:"total_changes"`
-	DurationPerComment float64 `csv:"duration_per_comment"`
-	DurationPerLine    float64 `csv:"duration_per_line"`
-	ID                 string  `csv"pr_id"`
+	DurationSeconds    float64   `csv:"duration"`
+	Comments           int       `csv:"comments"`
+	Additions          int       `csv:"additions"`
+	Deletions          int       `csv:"deletions"`
+	TotalChanges       int       `csv:"total_changes"`
+	DurationPerComment float64   `csv:"duration_per_comment"`
+	DurationPerLine    float64   `csv:"duration_per_line"`
+	ID                 string    `csv"pr_id"`
+	MergedAt           time.Time `csv:"merged_at"`
+	ClosedAt           time.Time `csv:"closed_at"`
+	UpdatedAt          time.Time `csv:"updated_at"`
+	Author             string    `csv:"author"`
+	Url                string    `csv:"url"`
+	Title              string    `csv:"title"`
+	Reviewers          string
 }
 
 type PullRequestPerformanceAggregate struct {

@@ -203,6 +203,13 @@ func NewPullRequestPerformanceMetric(repo vsgh.Repository, pr vsgh.PullRequest) 
 		Deletions:    pr.Deletions,
 		TotalChanges: pr.Additions + pr.Deletions,
 		ID:           strconv.FormatInt(int64(pr.Number), 10),
+		MergedAt:     pr.MergedAt,
+		ClosedAt:     pr.ClosedAt,
+		UpdatedAt:    pr.UpdatedAt,
+		Author:       pr.Author.Login,
+		Url:          pr.Url,
+		Title:        pr.Title,
+		Reviewers:    pr.Reviewers(),
 	}
 
 	// if this was merged use the mergedAt - CreatedAt
