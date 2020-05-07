@@ -3,6 +3,10 @@ package tracers
 import (
 	"context"
 	"fmt"
+	"io"
+	"net"
+	"os"
+
 	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/mocktracer"
@@ -10,7 +14,8 @@ import (
 	"github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
 	"github.com/urfave/cli"
-	"io"
+	dDogOpenTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer"
+	dDogTracer "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 type LightstepCloser struct {
@@ -20,6 +25,13 @@ type LightstepCloser struct {
 
 func (l LightstepCloser) Close() error {
 	l.tracer.Close(l.ctx)
+	return nil
+}
+
+type DataDogTraceCloser struct{}
+
+func (c DataDogTraceCloser) Close() error {
+	dDogTracer.Stop()
 	return nil
 }
 
@@ -55,6 +67,21 @@ func InitLightstep(service string, accessToken string) lightstep.Tracer {
 	return lightStepTracer
 }
 
+func InitDatadog(service string) (opentracing.Tracer, io.Closer) {
+	addr := net.JoinHostPort(
+		os.Getenv("DD_AGENT_HOST"),
+		os.Getenv("DD_TRACE_AGENT_PORT"),
+	)
+
+	dTracer := dDogOpenTracer.New(
+		dDogTracer.WithServiceName(service),
+		dDogTracer.WithAgentAddr(addr),
+		dDogTracer.WithAnalytics(true),
+	)
+
+	return dTracer, &DataDogTraceCloser{}
+}
+
 type Initializer func(ctx context.Context, name string) (opentracing.Tracer, io.Closer, error)
 
 func InitializerFromCLI(c *cli.Context, tracerName string) Initializer {
@@ -74,6 +101,11 @@ func InitializerFromCLI(c *cli.Context, tracerName string) Initializer {
 				c.String("tracer-access-token"),
 			)
 			return tracer, NewLightstepCloser(ctx, tracer), nil
+		}
+	case "datadog":
+		return func(_ context.Context, service string) (opentracing.Tracer, io.Closer, error) {
+			dTracer, closer := InitDatadog(service)
+			return dTracer, closer, nil
 		}
 	default:
 		return func(context.Context, string) (opentracing.Tracer, io.Closer, error) {

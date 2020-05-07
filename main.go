@@ -2,8 +2,14 @@ package main
 
 import (
 	"context"
-	"contrib.go.opencensus.io/exporter/prometheus"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/ImpactInsights/valuestream/eventsources"
 	"github.com/ImpactInsights/valuestream/eventsources/github"
 	"github.com/ImpactInsights/valuestream/eventsources/gitlab"
@@ -23,11 +29,6 @@ import (
 	"go.opencensus.io/plugin/ochttp/propagation/b3"
 	"go.opencensus.io/plugin/runmetrics"
 	"go.opencensus.io/stats/view"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 const envLogLevel string = "VS_LOG_LEVEL"
@@ -62,7 +63,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "tracer, t",
 			Value:  "logging",
-			Usage:  "tracer implementation to use: 'logger|jaeger|lightstep'",
+			Usage:  "tracer implementation to use: 'logger|jaeger|lightstep|datadog'",
 			EnvVar: "VS_TRACER_BACKEND",
 		},
 		cli.StringFlag{
