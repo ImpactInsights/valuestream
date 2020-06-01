@@ -68,6 +68,10 @@ INFO[0000] PullRequests.List                             is_last=false page=1
 INFO[0001] PullRequests.List                             is_last=false page=2
 INFO[0001] PullRequests.List                             is_last=true page=3
 ```
+**Private Repos**
+
+Private repos can be accessed by setting the `VS_PERF_REPORT_GITHUB_ACCESS_TOKEN` environment variable or by invoking `github pull-requests` with `--access-token`
+
 Next is to generate [pull request performance metrics](https://medium.com/valuestream-by-operational-analytics-inc/using-code-review-metrics-as-performance-indicators-caa47a716297):
 
 ```
