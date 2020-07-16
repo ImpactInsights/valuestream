@@ -51,7 +51,7 @@ services:
     - elastic-jaeger
 
   jaeger-collector:
-    image: jaegertracing/jaeger-collector:latest
+    image: jaegertracing/jaeger-collector:1.17
     ports:
       - "14267:14267"
       - "14268:14268"
@@ -69,7 +69,7 @@ services:
     command: ["--es.tags-as-fields.all=true"]
 
   jaeger-agent:
-    image: jaegertracing/jaeger-agent:latest
+    image: jaegertracing/jaeger-agent:1.17
     ports:
       - "5775:5775/udp"
       - "5778:5778"
@@ -86,7 +86,7 @@ services:
     command: ["--collector.host-port=jaeger-collector:14267"]
 
   jaeger-query:
-    image: jaegertracing/jaeger-query:latest
+    image: jaegertracing/jaeger-query:1.17
     ports:
       - 16686:16686
     depends_on:
