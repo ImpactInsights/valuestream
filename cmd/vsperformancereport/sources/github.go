@@ -39,6 +39,7 @@ func (c *Conf) Close() error {
 func NewConf(ctx context.Context, c *cli.Context) (*Conf, error) {
 	accessToken := c.String("access-token")
 	outFilePath := c.String("out")
+	enterpriseDomain := c.String("enterprise-domain")
 
 	// get the output file
 	out := os.Stdout
@@ -53,7 +54,7 @@ func NewConf(ctx context.Context, c *cli.Context) (*Conf, error) {
 	signal.Notify(signalChan, os.Interrupt)
 
 	conf := Conf{
-		Client:       vsgh.NewClient(ctx, accessToken),
+		Client:       vsgh.NewClient(ctx, accessToken, enterpriseDomain),
 		Out:          out,
 		Org:          c.String("org"),
 		Repo:         c.String("repo"),
@@ -256,7 +257,7 @@ func NewGithubCommand() *cli.Command {
 					&cli.StringFlag{
 						Name:    "access-token",
 						Value:   "",
-						Usage:   "the event type to generate a report on",
+						Usage:   "your github access token",
 						EnvVars: []string{"VS_PERF_REPORT_GITHUB_ACCESS_TOKEN"},
 					},
 					&cli.IntFlag{
@@ -289,6 +290,11 @@ func NewGithubCommand() *cli.Command {
 						Value: "STDOUT",
 						Usage: "File to write output to",
 					},
+					&cli.StringFlag{
+						Name:  "enterprise-domain",
+						Value: "",
+						Usage: "Set to use the enterprise api. This value is used to build your API url 'https://{enterprise}/api/graphql'",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					ctx := context.Background()
@@ -316,6 +322,9 @@ func NewGithubCommand() *cli.Command {
 					}
 
 					metrics, err := PullRequests(ctx, conf, repos)
+					if err != nil {
+						return err
+					}
 
 					if err := gocsv.Marshal(metrics, conf.Out); err != nil {
 						return err
