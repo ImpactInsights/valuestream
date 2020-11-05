@@ -59,7 +59,12 @@ $ ~/ngrok http 5000
 
 ## CLI
 
-ValueStream offers a CLI for pulling data and generating offline performance reports.  Generating a report requires pulling the raw pull request information from a third-party api (GitHub in this case). The following command pulls merged prs inbatches of 10 using the GitHub api. Outputs:
+ValueStream offers a CLI for pulling data and generating offline performance reports. Generating a report requires 
+pulling the raw pull request information from a third-party api (GitHub in this case). The following command pulls 
+merged prs inbatches of 10 using the GitHub API.
+
+You must have an access token in order to access the GitHub API. Set the `VS_PERF_REPORT_GITHUB_ACCESS_TOKEN` environment 
+variable or invoke `github pull-requests` with `--access-token`.
 
 ```
 $ go run cmd/vsperformancereport/main.go github pull-requests -org=ImpactInsights -pr-state=MERGED -out=/tmp/vs-prs.csv -prs-per-page=10 -repo=valuestream
@@ -68,9 +73,7 @@ INFO[0000] PullRequests.List                             is_last=false page=1
 INFO[0001] PullRequests.List                             is_last=false page=2
 INFO[0001] PullRequests.List                             is_last=true page=3
 ```
-**Private Repos**
 
-Private repos can be accessed by setting the `VS_PERF_REPORT_GITHUB_ACCESS_TOKEN` environment variable or by invoking `github pull-requests` with `--access-token`
 
 Next is to generate [pull request performance metrics](https://medium.com/valuestream-by-operational-analytics-inc/using-code-review-metrics-as-performance-indicators-caa47a716297):
 

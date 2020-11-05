@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func NewClient(ctx context.Context, accessToken string) *githubv4.Client {
+func NewClient(ctx context.Context, accessToken string, enterpriseDomain string) *githubv4.Client {
 	var tc *http.Client
 	if accessToken != "" {
 		ts := oauth2.StaticTokenSource(
@@ -18,7 +19,17 @@ func NewClient(ctx context.Context, accessToken string) *githubv4.Client {
 		tc = oauth2.NewClient(ctx, ts)
 	}
 
-	return githubv4.NewClient(tc)
+	if enterpriseDomain == "" {
+		return githubv4.NewClient(tc)
+	}
+
+	return githubv4.NewEnterpriseClient(
+		fmt.Sprintf("https://%s/api/graphql",
+			enterpriseDomain,
+		),
+		tc,
+	)
+
 }
 
 /*
